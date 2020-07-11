@@ -7,26 +7,35 @@ from datetime import datetime
 def _load_conf(conf_obj, conf_val, conf_type):
     if conf_val in conf_obj: return conf_obj[conf_val]
     else: 
+        print('\033[31m\u2716\033[0m')
         print("Unable to load {0} \"{1}\" from the configuration file.. Exiting...".format(conf_type, conf_val))
         exit(1)
 
 class Mist_SMTP():
     def __init__(self, config):
-        self.host = _load_conf(config.smtp, "host", "SMTP")
-        self.port = _load_conf(config.smtp, "port", "SMTP")
-        self.use_ssl = _load_conf(config.smtp, "use_ssl", "SMTP")
-        self.username = _load_conf(config.smtp, "username", "SMTP")
-        self.password = _load_conf(config.smtp, "password", "SMTP")
-        self.from_name = _load_conf(config.smtp, "from_name", "SMTP")
-        self.from_email = _load_conf(config.smtp, "from_email", "SMTP")
-        self.reports_receiver_emails = _load_conf(config.smtp, "reports_receiver_emails", "SMTP")
-        self.logo_url = _load_conf(config.smtp, "logo_url", "SMTP")
-        self.email_psk_to_users = _load_conf(config.smtp, "email_psk_to_users", "SMTP")
-        self.report_enabled = _load_conf(config.smtp, "report_enabled", "SMTP")
-        self.report_receivers = _load_conf(config.smtp, "report_receivers", "SMTP")
-        if self.use_ssl:
-            self.smtp = smtplib.SMTP_SSL
-        else: self.smtp = smtplib.SMTP
+        print("Loading SMTP settings ".ljust(79, "."), end="", flush=True)
+        if hasattr(config, "smtp"):
+            self.host = _load_conf(config.smtp, "host", "SMTP")
+            self.port = _load_conf(config.smtp, "port", "SMTP")
+            self.use_ssl = _load_conf(config.smtp, "use_ssl", "SMTP")
+            self.username = _load_conf(config.smtp, "username", "SMTP")
+            self.password = _load_conf(config.smtp, "password", "SMTP")
+            self.from_name = _load_conf(config.smtp, "from_name", "SMTP")
+            self.from_email = _load_conf(config.smtp, "from_email", "SMTP")
+            self.logo_url = _load_conf(config.smtp, "logo_url", "SMTP")
+            self.email_psk_to_users = _load_conf(config.smtp, "email_psk_to_users", "SMTP")
+            self.report_enabled = _load_conf(config.smtp, "report_enabled", "SMTP")
+            self.report_receivers = _load_conf(config.smtp, "report_receivers", "SMTP")
+            if self.use_ssl:
+                self.smtp = smtplib.SMTP_SSL
+            else: self.smtp = smtplib.SMTP
+            print("\033[92m\u2714\033[0m")
+        else:
+            print('\033[31m\u2716\033[0m')
+            print("SMTP DISABLED")
+            self.email_psk_to_users = False
+            self.report_enabled = False
+            
 
     def _send_email(self, receivers, msg, log_message):
         print(log_message, end="", flush=True)
@@ -64,7 +73,6 @@ class Mist_SMTP():
 
     def send_report(self, added_psks, removed_psks):
         if self.report_enabled:
-            print("".ljust(80, "-"))
             print("Generating report ".ljust(79, "."), end="", flush=True)
             msg = MIMEMultipart()
             msg["Subject"] = "Automated PSK Report"
@@ -92,3 +100,5 @@ class Mist_SMTP():
 
             print("\033[92m\u2714\033[0m")
             return self._send_email(self.report_receivers, msg.as_string(), "Sending the email ".ljust(79, "."))
+        else:
+            print("Report disabled")

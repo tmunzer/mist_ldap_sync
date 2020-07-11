@@ -5,16 +5,24 @@ import string
 def _load_conf(conf_obj, conf_val, conf_type):
     if conf_val in conf_obj: return conf_obj[conf_val]
     else: 
+        print('\033[31m\u2716\033[0m')
         print("Unable to load {0} \"{1}\" from the configuration file.. Exiting...".format(conf_type, conf_val))
         exit(1)
 
 class Mist():
     def __init__(self, config):
-        self.host = _load_conf(config.mist, "host", "MIST")
-        self.apitoken = _load_conf(config.mist, "apitoken", "Mist")
-        self.site_id = _load_conf(config.mist, "site_id", "Mist")
-        self.ssid = _load_conf(config.mist, "ssid", "Mist")
-        self.psk_length = _load_conf(config.mist, "psk_length", "Mist")
+        print("Loading MIST settings ".ljust(79, "."), end="", flush=True)
+        if hasattr(config, "mist"):
+            self.host = _load_conf(config.mist, "host", "MIST")
+            self.apitoken = _load_conf(config.mist, "apitoken", "Mist")
+            self.site_id = _load_conf(config.mist, "site_id", "Mist")
+            self.ssid = _load_conf(config.mist, "ssid", "Mist")
+            self.psk_length = _load_conf(config.mist, "psk_length", "Mist")
+            print("\033[92m\u2714\033[0m")
+        else:
+            print('\033[31m\u2716\033[0m')
+            print("\"mist\" settings not found in the configuration file... Exiting...")
+            exit(1)
         
     def _get_random_alphanumeric_string(self):
         letters_and_digits = string.ascii_letters + string.digits
@@ -22,11 +30,17 @@ class Mist():
         return result_str
 
     def get_users(self, mist_user_list=[]):
-        res = self.get_ppks()
-        if "result" in res:
-            for psk in res["result"]:
-                mist_user_list.append({"name": psk["name"], "id": psk["id"]})
-        return mist_user_list
+        print("Requesting {0} to get the list of PSKs ".format(self.host).ljust(79, "."), end="", flush=True)
+        try:
+            res = self.get_ppks()
+            if "result" in res:
+                for psk in res["result"]:
+                    mist_user_list.append({"name": psk["name"], "id": psk["id"]})
+            print("\033[92m\u2714\033[0m")
+            return mist_user_list
+        except:
+            print('\033[31m\u2716\033[0m')
+            exit(2)
 
     def get_ppks(self):
         url = "https://{0}/api/v1/sites/{1}/psks?ssid={2}".format(self.host, self.site_id, self.ssid)

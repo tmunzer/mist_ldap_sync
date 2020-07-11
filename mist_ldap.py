@@ -3,22 +3,30 @@ from ldap3 import Server, Connection, ALL
 def _load_conf(conf_obj, conf_val, conf_type):
     if conf_val in conf_obj: return conf_obj[conf_val]
     else: 
+        print('\033[31m\u2716\033[0m')
         print("Unable to load {0} \"{1}\" from the configuration file.. Exiting...".format(conf_type, conf_val))
         exit(1)
         
 class Mist_LDAP():
     def __init__(self, config):
-        self.host = _load_conf(config.ldap, "host", "LDAP")
-        self.port = _load_conf(config.ldap, "port", "LDAP")
-        self.use_ssl = _load_conf(config.ldap, "use_ssl", "LDAP")
-        self.tls = _load_conf(config.ldap, "tls", "LDAP")
-        self.bind_user= _load_conf(config.ldap, "bind_user", "LDAP")
-        self.bind_password= _load_conf(config.ldap, "bind_password", "LDAP")
-        self.base_dn= _load_conf(config.ldap, "base_dn", "LDAP")
-        self.search_group= _load_conf(config.ldap, "search_group", "LDAP")
-        self.user_name= _load_conf(config.ldap, "user_name", "LDAP")
-        self.user_email= _load_conf(config.ldap, "user_email", "LDAP")
-        self.server = Server(self.host, port=self.port, use_ssl=self.use_ssl,tls=self.tls)
+        print("Loading LDAP settings ".ljust(79, "."), end="", flush=True)
+        if hasattr(config, "ldap"):
+            self.host = _load_conf(config.ldap, "host", "LDAP")
+            self.port = _load_conf(config.ldap, "port", "LDAP")
+            self.use_ssl = _load_conf(config.ldap, "use_ssl", "LDAP")
+            self.tls = _load_conf(config.ldap, "tls", "LDAP")
+            self.bind_user= _load_conf(config.ldap, "bind_user", "LDAP")
+            self.bind_password= _load_conf(config.ldap, "bind_password", "LDAP")
+            self.base_dn= _load_conf(config.ldap, "base_dn", "LDAP")
+            self.search_group= _load_conf(config.ldap, "search_group", "LDAP")
+            self.user_name= _load_conf(config.ldap, "user_name", "LDAP")
+            self.user_email= _load_conf(config.ldap, "user_email", "LDAP")
+            self.server = Server(self.host, port=self.port, use_ssl=self.use_ssl,tls=self.tls)
+            print("\033[92m\u2714\033[0m")
+        else:
+            print('\033[31m\u2716\033[0m')
+            print("\"ldap\" settings not found in the configuration file... Exiting...")
+            exit(1)
 
 
     def get_users(self, ad_user_list=[]):
