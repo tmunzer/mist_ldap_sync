@@ -3,6 +3,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from datetime import datetime
+from mist_qrcode import generate_qrcode
 
 def _load_conf(conf_obj, conf_val, conf_type):
     if conf_val in conf_obj: return conf_obj[conf_val]
@@ -24,6 +25,7 @@ class Mist_SMTP():
             self.from_email = _load_conf(config.smtp, "from_email", "SMTP")
             self.logo_url = _load_conf(config.smtp, "logo_url", "SMTP")
             self.email_psk_to_users = _load_conf(config.smtp, "email_psk_to_users", "SMTP")
+            self.enable_qrcode = _load_conf(config.smtp, "enable_qrcode", "SMTP")
             self.report_enabled = _load_conf(config.smtp, "report_enabled", "SMTP")
             self.report_receivers = _load_conf(config.smtp, "report_receivers", "SMTP")
             if self.use_ssl:
@@ -58,9 +60,27 @@ class Mist_SMTP():
             msg["From"] = "{0} <{1}>".format(self.from_name, self.from_email)
             msg["To"] = "{0} <{1}>".format(user_name, user_email)
 
+            if self.enable_qrcode:
+                qr_info = "You can also scan the QRCode below to configure your device:"
+                qr = generate_qrcode(ssid, psk)
+
+                qr_html = ""
+                fg_color = "#eee"
+                bg_color = "black"
+                for i in qr:
+                    qr_html+="<tr>"
+                    for j in i:
+                        if j: color = bg_color
+                        else: color = fg_color
+                        qr_html +="<td style=\"background-color:{0}; height:5px; width: 5px; padding: 0px;\"> </td>\r\n".format(color)
+                    qr_html+="</tr>\r\n"
+            else:
+                qr_info = ""
+                qr_html = ""
+
             with open("psk_template.html", "r") as template:
                 html = template.read()
-            html = html.format(self.logo_url, user_name, ssid, psk)
+            html = html.format(self.logo_url, user_name, ssid, psk, qr_info, qr_html)
             msg_body = MIMEText(html, "html")
             msg.attach(msg_body)
 

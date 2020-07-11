@@ -30,7 +30,3 @@ If you want to customize the email sent to the users, you can modify the `psk_te
   - `{1}` will be replaced by the user name
   - `{2}` will be replaced by the SSID name
   - `{3}` wll be replaced by the PPSK value
- 
-### ToDo
-- store the script logs in a log file
-- generate a connection QRcode to add in the emai (this will allow the  automate the users' devices configuration to access the network, just by scanning the QRcode)

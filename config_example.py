@@ -29,6 +29,7 @@ smtp = {
     "from_email": "wi-fi@domain.local",
     "logo_url": "https://cdn.mist.com/wp-content/uploads/logo.png",
     "email_psk_to_users": True,
+    "enable_qrcode": True,
     "report_enabled": True,
     "report_receivers": ["administrator@domain.local"]
 }
