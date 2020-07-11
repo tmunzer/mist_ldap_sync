@@ -22,6 +22,7 @@ Check the `config_example.py` file to know how to configure the script. You will
 
 ### Email template
 **Any change in the `email_template.html` is at your own risks!**
+
 If you want to customize the email sent to the users, you can modify the `email_template.html` file. It's basicaly a HTML file, but:
 - Be sure to use double brackets "{{" and "}}" instead of single brackets for HTML
 - The script will inject 3 information in the template:
