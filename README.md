@@ -1,2 +1,2 @@
 # mist_ldap_sync
- Python script to automatically create/delete for users in AD/LDAP group
+ python to automatically create/delete Mist PPSK for user in AD/LDAP Group
