@@ -18,7 +18,7 @@
                     <table>
                         <tr>
                             <td>
-                                          <img style="height: 5em;" src="{3}"/>
+                                <img style="height: 5em;" src="{0}"/>
                             </td>
                         </tr>
                     </table>
@@ -28,33 +28,42 @@
                 <td>
                     <table class="content" style="width: 100%;">
                         <tr>
-                            <th colspan="2">
-                                Welcome <b> {0} </b>
+                            <th>
+                                PSK Report -<b> {1} </b>
                             </th>
                         </tr>
                         <tr>
-                            <td colspan="2" style="padding-top: 2em; padding-left: 2em; text-align: left;">
-                                Please find below your personal credentials to get access to the network: 
-                            </td>
+                            <td><b>Users added: {2}</b></td>
                         </tr>
                         <tr>
-                            <td style="padding-top: 1em; padding-left: 2em; width: 6em;">
-                            SSID:
+                            <td>
+                                <table style="width: 100%;">
+                                    <tr>
+                                        <td style="width: 35%;">Username</td>
+                                        <td style="width: 35%;">Email</td>
+                                        <td style="width: 15%;">PSK Created</td>
+                                        <td style="width: 15%;">Email sent</td>
+                                    </tr>
+                                    <tr> {3} </tr>
+                                </table>
                             </td>
-                            <td style="padding-top: 1em;" >
-                            <b> {1} </b>
-                            </td>
+                        </tr>   
                         </tr>
                         <tr>
-                            <td style="padding-top: 1em; padding-left: 2em; width: 6em;">
-                            Password:
-                            </td>
-                            <td style="padding-top: 1em;">
-                            <b> {2} </b>
-                            </td>
+                            <td><b>Users removed: {4}</b></td>
                         </tr>
                         <tr>
-                            <td style="height: 5em;" colspan="2"></td>
+                            <td>
+                                <table style="width: 100%;">
+                                    <tr>
+                                        <td style="width: 35%;">PSK Name</td>
+                                        <td style="width: 65%;">PSK Deleted</td>
+                                    </tr>
+                                    <tr>
+                                        {5}
+                                    </tr>
+                                </table>
+                            </td>
                         </tr>
                     </table>
                 </td>

@@ -30,11 +30,11 @@ class Mist_SMTP():
 
     def _send_email(self, receivers, msg, log_message):
         print(log_message, end="", flush=True)
-        try:          
+        try:             
             with self.smtp(self.host, self.port) as smtp:
                 if self.username and self.password:
                     smtp.login(self.username, self.password)
-                smtp.sendmail(self.from_email, receivers, msg)      
+                smtp.sendmail(self.from_email, receivers, msg)   
             print("\033[92m\u2714\033[0m")
             return True
         except:              
@@ -49,9 +49,9 @@ class Mist_SMTP():
             msg["From"] = "{0} <{1}>".format(self.from_name, self.from_email)
             msg["To"] = "{0} <{1}>".format(user_name, user_email)
 
-            with open("email_template.html", "r") as template:
+            with open("psk_template.html", "r") as template:
                 html = template.read()
-            html = html.format(user_name, ssid, psk, self.logo_url)
+            html = html.format(self.logo_url, user_name, ssid, psk)
             msg_body = MIMEText(html, "html")
             msg.attach(msg_body)
 
@@ -66,35 +66,29 @@ class Mist_SMTP():
         if self.report_enabled:
             print("".ljust(80, "-"))
             print("Generating report ".ljust(79, "."), end="", flush=True)
-            # msg = MIMEMultipart()
-            # msg["Subject"] = "Automated PSK Report"
-            # msg["From"] = "{0} <{1}>".format(self.from_name, self.from_email)
-            # msg["To"] = self.report_receivers
+            msg = MIMEMultipart()
+            msg["Subject"] = "Automated PSK Report"
+            msg["From"] = "{0} <{1}>".format(self.from_name, self.from_email)
+            msg["To"] = ""
             
-            message="""From: {0} <{1}>
-To: 
-Subject: Automated PSK Report
-
-New Report - {2}
-            
-            
-Added PSK ({3}): 
-""".format(self.from_name, self.from_email, datetime.today(), len(added_psks))
+            add_table=""
             for psk in added_psks:
-                if psk["psk_added"]: psk_created = "Created"
-                else: psk_created: "NOT Created"
-                if psk["email_sent"]: psk_sent = "Email sent to {0}".format(psk["email"])
-                elif psk["email"]: psk_sent = "Email NOT sent to {0}".format(psk["email"])
-                else: psk_sent = "Email not sent"
-                message+="{0} -- {1} and {2}\r\n".format(psk["name"], psk_created, psk_sent)
-            message += """
-PSK Removed ({0}):
-""".format(len(removed_psks))
+                name = psk["name"] if "name" in psk else ""
+                email = psk["email"] if "email" in psk else ""
+                created = "Yes" if psk["psk_added"] else "No"
+                sent = "Yes" if psk["email_sent"] else "No"
+                add_table += "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>".format(name, email, created, sent )
+
+            delete_table=""
             for psk in removed_psks:
-                if psk["psk_deleted"]: psk_deleted = "Deleted"
-                else: psk_deleted = "False"
-                message+="{0} -- {1}\r\n".format(psk["psk"], psk_deleted)
-            message+="\r\n"
+                name = psk["psk"] if "psk" in psk else ""
+                deleted = "Yes" if psk["psk_deleted"] else "No"
+                delete_table += "<tr><td>{0}</td><td>{1}</td></tr>".format(name, deleted)
+            with open("report_template.html", "r") as template:
+                html = template.read()
+            html = html.format(self.logo_url, datetime.today(), len(added_psks), add_table, len(removed_psks), delete_table)
+            msg_body = MIMEText(html, "html")
+            msg.attach(msg_body)
 
             print("\033[92m\u2714\033[0m")
-            self._send_email(self.report_receivers, message, "Sending the email ".ljust(79, "."))
+            return self._send_email(self.report_receivers, msg.as_string(), "Sending the email ".ljust(79, "."))

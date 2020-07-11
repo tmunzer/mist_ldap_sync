@@ -21,17 +21,16 @@
 Check the `config_example.py` file to know how to configure the script. You will have to create a `config.py` file with the required settings 
 
 ### Email template
-**Any change in the `email_template.html` is at your own risks!**
+**Any change in the `psk_template.html` is at your own risks!**
 
-If you want to customize the email sent to the users, you can modify the `email_template.html` file. It's basicaly a HTML file, but:
+If you want to customize the email sent to the users, you can modify the `psk_template.html` file. It's basicaly a HTML file, but:
 - Be sure to use double brackets "{{" and "}}" instead of single brackets for HTML
 - The script will inject 3 information in the template:
-  - `{0}` will be replaced by the user name
-  - `{1}` will be replaced by the SSID name
-  - `{2}` wll be replaced by the PPSK value
-  - `{3}` will be replaced by the logo image location. It must be published on a web server and reachable by the users' devices
+  - `{0}` will be replaced by the logo image location. It must be published on a web server and reachable by the users' devices
+  - `{1}` will be replaced by the user name
+  - `{2}` will be replaced by the SSID name
+  - `{3}` wll be replaced by the PPSK value
  
 ### ToDo
 - store the script logs in a log file
 - generate a connection QRcode to add in the emai (this will allow the  automate the users' devices configuration to access the network, just by scanning the QRcode)
-- use a HTML template for the PPSK report sent to the administrators
