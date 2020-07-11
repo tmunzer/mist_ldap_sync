@@ -34,3 +34,4 @@ If you want to customize the email sent to the users, you can modify the `email_
 ### ToDo
 - store the script logs in a log file
 - generate a connection QRcode to add in the emai (this will allow the  automate the users' devices configuration to access the network, just by scanning the QRcode)
+- use a HTML template for the PPSK report sent to the administrators
