@@ -1,7 +1,7 @@
 import config
 from mist_smtp import Mist_SMTP
 from mist_ldap import Mist_LDAP
-from mist import Mist
+from mist_psk import Mist
 
 class Main():
     def __init__(self):
