@@ -3,7 +3,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from datetime import datetime
-from mist_qrcode import generate_qrcode
+from mist_qrcode import get_qrcode_as_html
 
 def _load_conf(conf_obj, conf_val, conf_type):
     if conf_val in conf_obj: return conf_obj[conf_val]
@@ -62,18 +62,7 @@ class Mist_SMTP():
 
             if self.enable_qrcode:
                 qr_info = "You can also scan the QRCode below to configure your device:"
-                qr = generate_qrcode(ssid, psk)
-
-                qr_html = ""
-                fg_color = "#eee"
-                bg_color = "black"
-                for i in qr:
-                    qr_html+="<tr>"
-                    for j in i:
-                        if j: color = bg_color
-                        else: color = fg_color
-                        qr_html +="<td style=\"background-color:{0}; height:5px; width: 5px; padding: 0px; margin: 0px\"></td>\r\n".format(color)
-                    qr_html+="</tr>\r\n"
+                qr_html = get_qrcode_as_html(ssid, psk)                
             else:
                 qr_info = ""
                 qr_html = ""
@@ -84,10 +73,6 @@ class Mist_SMTP():
             msg_body = MIMEText(html, "html")
             msg.attach(msg_body)
 
-        #    with open("logo.png", "rb") as logo:
-        #        logo_cid = MIMEImage(logo.read())
-        #        logo_cid.add_header("Content-Disposition", "attachment", filename="logo-cid.png", id="logo-cid")
-        #        msg.attach(logo_cid)
             return self._send_email(user_email, msg.as_string(), "    Sending the email ".ljust(79, "."))
 
 
