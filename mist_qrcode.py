@@ -7,6 +7,7 @@ def generate_qrcode(ssid, psk):
         box_size=10,
         border=4,
     )
-    qr.add_data("WIFI:T:WPA;S:{0};P:{1};;".format(ssid, psk))
+    
+    qr.add_data("WIFI:S:{0};T:WPA;P:{1};;".format(ssid, psk))
     qr.make(fit=True)
     return qr.get_matrix()

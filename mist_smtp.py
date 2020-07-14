@@ -72,7 +72,7 @@ class Mist_SMTP():
                     for j in i:
                         if j: color = bg_color
                         else: color = fg_color
-                        qr_html +="<td style=\"background-color:{0}; height:5px; width: 5px; padding: 0px;\"> </td>\r\n".format(color)
+                        qr_html +="<td style=\"background-color:{0}; height:5px; width: 5px; padding: 0px; margin: 0px\"></td>\r\n".format(color)
                     qr_html+="</tr>\r\n"
             else:
                 qr_info = ""
