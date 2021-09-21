@@ -6,7 +6,7 @@ def _load_conf(conf_obj, conf_val, conf_type):
     if conf_val in conf_obj: return conf_obj[conf_val]
     else: 
         print('\033[31m\u2716\033[0m')
-        print("Unable to load {0} \"{1}\" from the configuration file.. Exiting...".format(conf_type, conf_val))
+        print("Unable to load {0} \"{1}\" from the configuration file. Exiting...".format(conf_type, conf_val))
         exit(1)
 
 class Mist():
@@ -15,7 +15,14 @@ class Mist():
         if hasattr(config, "mist"):
             self.host = _load_conf(config.mist, "host", "MIST")
             self.apitoken = _load_conf(config.mist, "apitoken", "Mist")
-            self.site_id = _load_conf(config.mist, "site_id", "Mist")
+            self.scope = _load_conf(config.mist, "scope", "Mist")
+            if (self.scope == "orgs"):
+                self.scope_id = _load_conf(config.mist, "org_id", "Mist")
+            elif (self.scope == "sites"):
+                self.scope_id = _load_conf(config.mist, "site_id", "Mist")
+            else:
+                print("Unable to load the {0} id from the configuration file. Exiting...".format(self.scope))
+                exit(1)
             self.ssid = _load_conf(config.mist, "ssid", "Mist")
             self.psk_length = _load_conf(config.mist, "psk_length", "Mist")
             print("\033[92m\u2714\033[0m")
@@ -43,12 +50,12 @@ class Mist():
             exit(2)
 
     def get_ppks(self):
-        url = "https://{0}/api/v1/sites/{1}/psks?ssid={2}".format(self.host, self.site_id, self.ssid)
+        url = "https://{0}/api/v1/{1}/{2}/psks?ssid={3}".format(self.host, self.scope, self.scope_id, self.ssid)
         response = mist_get(self.apitoken, url)
         return response
 
     def delete_ppsk(self, psk_id):
-        url = "https://{0}/api/v1/sites/{1}/psks/{2}".format(self.host, self.site_id, psk_id)
+        url = "https://{0}/api/v1/{1}/{2}/psks/{3}".format(self.host, self.scope, self.scope_id, psk_id)
         response = mist_delete(self.apitoken, url)
         return response
 
@@ -63,7 +70,7 @@ class Mist():
             "id": 1
         }
         try:
-            url = "https://{0}/api/v1/sites/{1}/psks".format(self.host, self.site_id)
+            url = "https://{0}/api/v1/{1}/{2}/psks".format(self.host, self.scope, self.scope_id)
             res = mist_post(self.apitoken, url, psk_data)["result"] 
             if "id" in res and "ssid" in res and "passphrase" in res:       
                 print("\033[92m\u2714\033[0m")

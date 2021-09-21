@@ -14,7 +14,9 @@ ldap = {
 mist = {
     "host": "api.mist.com",
     "apitoken": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "site_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "scope": "orgs", # "orgs" or "sites" 
+    "org_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", # only set this value if `scope`==`org`
+    "site_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", # only set this value if `scope`==`site`
     "ssid": "ssid_name",
     "psk_length": 10
 }

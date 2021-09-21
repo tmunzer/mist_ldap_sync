@@ -65,7 +65,7 @@ class Mist_LDAP():
         print("Processing LDAP accounts ".ljust(79, "."), end="", flush=True)
         try:
             for entry in conn.entries:
-                if not "computer" in entry.objectClass:
+                if not "computer" in entry.objectClass and entry.__getattribute__(self.user_name):
                     name = str(entry.__getattribute__(self.user_name))
                     email = str(entry.__getattribute__(self.user_email))
                     ad_user_list.append({"name": name, "email": email})
