@@ -5,52 +5,41 @@ from email.mime.image import MIMEImage
 from datetime import datetime
 from mist_qrcode import get_qrcode_as_html
 
-def _load_conf(conf_obj, conf_val, conf_type):
-    if conf_val in conf_obj: return conf_obj[conf_val]
-    else: 
-        print('\033[31m\u2716\033[0m')
-        print("Unable to load {0} \"{1}\" from the configuration file.. Exiting...".format(conf_type, conf_val))
-        exit(1)
-
 class Mist_SMTP():
     def __init__(self, config):
-        print("Loading SMTP settings ".ljust(79, "."), end="", flush=True)
-        if hasattr(config, "smtp"):
-            self.host = _load_conf(config.smtp, "host", "SMTP")
-            self.port = _load_conf(config.smtp, "port", "SMTP")
-            self.use_ssl = _load_conf(config.smtp, "use_ssl", "SMTP")
-            self.username = _load_conf(config.smtp, "username", "SMTP")
-            self.password = _load_conf(config.smtp, "password", "SMTP")
-            self.from_name = _load_conf(config.smtp, "from_name", "SMTP")
-            self.from_email = _load_conf(config.smtp, "from_email", "SMTP")
-            self.logo_url = _load_conf(config.smtp, "logo_url", "SMTP")
-            self.email_psk_to_users = _load_conf(config.smtp, "email_psk_to_users", "SMTP")
-            self.enable_qrcode = _load_conf(config.smtp, "enable_qrcode", "SMTP")
-            self.report_enabled = _load_conf(config.smtp, "report_enabled", "SMTP")
-            self.report_receivers = _load_conf(config.smtp, "report_receivers", "SMTP")
+        if (config["enabled"]):
+            self.host = config["host"]
+            self.port = config["port"]
+            self.use_ssl = config["use_ssl"]
+            self.username = config["username"]
+            self.password = config["password"]
+            self.from_name = config["from_name"]
+            self.from_email = config["from_email"]
+            self.logo_url = config["logo_url"]
+            self.email_psk_to_users = config["email_psk_to_users"]
+            self.enable_qrcode = config["enable_qrcode"]
+            self.report_enabled = config["report_enabled"]
+            self.report_receivers = config["report_receivers"]
             if self.use_ssl:
                 self.smtp = smtplib.SMTP_SSL
             else: self.smtp = smtplib.SMTP
-            print("\033[92m\u2714\033[0m")
         else:
-            print('\033[31m\u2716\033[0m')
-            print("SMTP DISABLED")
             self.email_psk_to_users = False
             self.report_enabled = False
             
 
     def _send_email(self, receivers, msg, log_message):
         print(log_message, end="", flush=True)
-        try:             
-            with self.smtp(self.host, self.port) as smtp:
-                if self.username and self.password:
-                    smtp.login(self.username, self.password)
-                smtp.sendmail(self.from_email, receivers, msg)   
-            print("\033[92m\u2714\033[0m")
-            return True
-        except:              
-            print('\033[31m\u2716\033[0m')
-            return False
+        #try:             
+        with self.smtp(self.host, self.port) as smtp:
+            if self.username and self.password:
+                smtp.login(self.username, self.password)
+            smtp.sendmail(self.from_email, receivers, msg)   
+        print("\033[92m\u2714\033[0m")
+        return True
+        # except:              
+        #     print('\033[31m\u2716\033[0m')
+        #     return False
 
 
     def send_psk(self, psk, ssid, user_name, user_email):
@@ -82,7 +71,6 @@ class Mist_SMTP():
             msg = MIMEMultipart()
             msg["Subject"] = "Automated PSK Report"
             msg["From"] = "{0} <{1}>".format(self.from_name, self.from_email)
-            msg["To"] = ""
             
             add_table=""
             for psk in added_psks:
@@ -104,6 +92,9 @@ class Mist_SMTP():
             msg.attach(msg_body)
 
             print("\033[92m\u2714\033[0m")
-            return self._send_email(self.report_receivers, msg.as_string(), "Sending the email ".ljust(79, "."))
+            for receiver in self.report_receivers:
+                msg["To"] = receiver
+                self._send_email(receiver, msg.as_string(), "Sending report email to {0} ".format(receiver).ljust(79, "."))
+            return 
         else:
             print("Report disabled")
