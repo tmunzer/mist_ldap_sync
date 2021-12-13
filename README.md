@@ -59,7 +59,7 @@ You can use the `-c` option to check your configuration.
 **Any change in the `psk_template.html` is at your own risks!**
 
 If you want to customize the email sent to the users, you can modify the `psk_template.html` file. It's basicaly a HTML file, but:
-- Be sure to use double brackets "{{" and "}}" instead of single brackets for HTML
+- Be sure to use double curly brackets "{{" and "}}" instead of single curly brackets for HTML
 - The script will inject 3 information in the template:
   - `{0}` will be replaced by the logo image location. It must be published on a web server and reachable by the users' devices
   - `{1}` will be replaced by the user name
