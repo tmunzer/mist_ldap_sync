@@ -1,12 +1,51 @@
 # Mist LDAP Sync
  This is Python script to automatically create/delete Mist PPSK for user in AD/LDAP/LDAPS Group.
 
+## MIT License
+
+Copyright (c) 2021 Thomas Munzer
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ## How it works?
-1. The script will retrieve all the users belong to a specific group. It will only ask for username and email attributes
-2. The script will retrieve all the Mist PPSK for os specific SSID on a specific site
-3. The script will look for PPSKs not tied to any users from the AD/LDAP. If any, it will delete the PPSK
-4. The script will look for users without PPSK. If any it will create the PPSK. At this point, if the `config.py` file contains the SMTP settings, it will send an email to the user with the PPSK information.
+1. The script will retrieve all the LDAP/AD users that belong to a specific user group. It will only query for username and email attributes
+2. The script will retrieve all the Mist Site or Org PPSK created for the configured SSID
+3. The script will look for
+  * PPSKs not tied to any users from the AD/LDAP. If any, it will delete the PPSK
+  * Users without PPSK. If any it will create the PPSK.
+
+<div>
+<img src="https://github.com/tmunzer/mist_ldap_sync/raw/main/._readme/img/generate.png" width="45%">
+</div>
+ 
+4. If configured, the script will send the new PPSK to each user
+
+<div>
+<img src="https://github.com/tmunzer/mist_ldap_sync/raw/main/._readme/img/user.png" width="45%">
+</div>
+
 5. If configured, the script will send a report with created/deleted PPSK to the administrator(s)
+
+<div>
+<img src="https://github.com/tmunzer/mist_ldap_sync/raw/main/._readme/img/report.png" width="45%">
+</div>
+
 
 ## How to use it?
 1. Just install the dependencies manually or with the `requirements.txt` file. For example with `pîp -r requirements.txt`.
@@ -18,7 +57,15 @@
 
 ## Configuration
 ### Script settings
-Check the `config_example.py` file to know how to configure the script. You will have to create a `config.py` file with the required settings 
+Check the `example.env` file to know how to configure the script. You will have to create a `.env` file with the required settings.
+
+By default, the script is looking for the `.env` file in its own directory. You can also pass the `.env` file location when running the script with the `-e` option (i.e. `python3 mist_psk_rotate.py -e <path to the env file>`).
+
+You can use the `-c` option to check your configuration.
+
+<div>
+<img src="https://github.com/tmunzer/mist_ldap_sync/raw/main/._readme/img/check.png" width="50%">
+</div>
 
 ### Email template
 **Any change in the `psk_template.html` is at your own risks!**
@@ -30,3 +77,5 @@ If you want to customize the email sent to the users, you can modify the `psk_te
   - `{1}` will be replaced by the user name
   - `{2}` will be replaced by the SSID name
   - `{3}` wll be replaced by the PPSK value
+  - If QRcode is enabled, `{4}` wll be replaced by the QRCode information (i.e. "You can also scan the QRCode below to configure your device:")
+  - If QRcode is enabled, `{5}` wll be replaced by the QRCode
