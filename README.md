@@ -55,6 +55,43 @@ You can use the `-c` option to check your configuration.
 <img src="https://github.com/tmunzer/mist_ldap_sync/raw/main/._readme/img/check.png" width="50%">
 </div>
 
+### CONFIGURATION VARIABLES
+| Variable Name | Type | Required | Default Value | Comment |
+| ------------- | ---- | -------- | ------------- | ------- |
+|LDAP_HOST| string | True | | LDAP/AD FQDN or IP Address |
+|LDAP_PORT| integer | False | 389 | LDAP/AD Port |
+|LDAP_USE_SSL| boolean | False | False | |
+|LDAP_TLS| string | False | None | |
+|LDAP_BIND_USER| string | True | | User used to query LDAP/AD |
+|LDAP_BIND_PASSWORD| string | False | | User Password used to query LDAP/AD |
+|LDAP_BASE_DN| string | True | | Query Base DN |
+|LDAP_SEARCH_GROUP| string | False | | Used to limit query to users belonging to specific LDAP/AD group |
+|LDAP_USER_NAME| string | False | "userPrincipalName" | |
+|LDAP_USER_EMAIL| string | False | "mail" | |
+|MIST_HOST| string | True | | Mist host (e.g: "api.mist.com", "api.eu.mist.com") | 
+|MIST_API_TOKEN| string | True | | Mist API Token (need write access to create the PSKs) |
+|MIST_SCOPE| string | True | | Scope where to create the PSKs: "orgs" or "sites" |
+|MIST_SCOPE_ID| string | True | | org_id or site_id where to create the PSKs |
+|MIST_SSID| string | True | | SSID name used to create the PSKs |
+|MIST_PSK_LENGTH| integer | False | 12 | PSK length |
+|MIST_PSK_ALLOWED_CHARS| string | False | "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789" | Allowed characters in the PSK |
+|MIST_PSK_EXCLUDED| array | False | | Name of the PSKs to exclude from the automated process |
+|SMTP_ENABLED| boolean | False | False | |
+|SMTP_HOST| string | If SMTP_ENABLED | | SMTP Server FQDN or IP Address |
+|SMTP_PORT| integer | False | 465 | SMTP Server Port |
+|SMTP_USE_SSL| boolean | False | True | To use SMTPS / START-TLS |
+|SMTP_USERNAME| string | False | | SMTP Username |
+|SMTP_PASSWORD| string | False | | SMTP Password |
+|SMTP_FROM_NAME| string | False | "Wi-Fi Access" | |
+|SMTP_FROM_EMAIL| string | False | | |
+|SMTP_EMAIL_PSK_TO_USERS| boolean | False | True | To automatically send email to newly created users |
+|SMTP_LOGO_URL| string | False | "https://cdn.mist.com/wp-content/uploads/logo.png" | Email Logo |
+|SMTP_ENABLE_QRCODE| boolean | False | True | To include configuration QRCode in the email |
+|SMTP_REPORT_ENABLED| boolean | False | False | To send a report by email about the newly created / deleted PSKs |
+|SMTP_REPORT_RECEIVERS| array | If SMTP_REPORT_ENABLED | Email addresses that will receive the report |
+
+
+
 ### Email template
 **Any change in the `psk_template.html` is at your own risks!**
 
