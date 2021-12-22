@@ -66,8 +66,8 @@ You can use the `-c` option to check your configuration.
 |LDAP_BIND_PASSWORD | string | | User Password used to query LDAP/AD |
 |LDAP_BASE_DN | string | | Required. Query Base DN |
 |LDAP_SEARCH_GROUP | string | | Used to limit query to users belonging to specific LDAP/AD group |
-|LDAP_USER_NAME | string | "userPrincipalName" | |
-|LDAP_USER_EMAIL | string | "mail" | |
+|LDAP_USER_NAME | string | "userPrincipalName" | LDAP field used to name the PSK |
+|LDAP_USER_EMAIL | string | "mail" | LDAP field used to send the PSK by email |
 |MIST_HOST | string | | Required. Mist host (e.g: "api.mist.com", "api.eu.mist.com") | 
 |MIST_API_TOKEN | string | | Required. Mist API Token (need write access to create the PSKs) |
 |MIST_SCOPE | string | | Required. Scope where to create the PSKs: "orgs" or "sites" |
