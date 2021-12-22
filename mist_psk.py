@@ -11,6 +11,7 @@ class Mist():
         self.ssid = config["ssid"]
         self.psk_length = config["psk_length"]
         self.allowed_chars = config["allowed_chars"]
+        self.excluded_psks = config["excluded_psks"]
         
     def _get_random_alphanumeric_string(self):
         result_str = ''.join((random.choice(self.allowed_chars) for i in range(self.psk_length)))

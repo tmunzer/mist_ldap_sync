@@ -61,6 +61,7 @@ def _load_mist(verbose):
         "ssid": os.environ.get("MIST_SSID", default=None),
         "psk_length": int(os.environ.get("MIST_PSK_LENGTH", default=12)),
         "allowed_chars": os.environ.get("MIST_PSK_ALLOWED_CHARS", default="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"),
+        "excluded_psks": os.environ.get("MIST_PSK_EXCLUDED", default=""),
     }
     if not mist_config["host"]: 
         print("ERROR: Missing the LDAP HOST")
@@ -95,6 +96,7 @@ def _load_mist(verbose):
         print("ssid          : {0}".format(mist_config["ssid"]))
         print("psk_length    : {0}".format(mist_config["psk_length"]))
         print("allowed_chars : {0}".format(mist_config["allowed_chars"]))
+        print("excluded_psks : {0}".format(mist_config["excluded_psks"]))
         print("")
 
     return mist_config
@@ -186,16 +188,17 @@ class Main():
             try:
                 next(item["name"] for item in self.ldap_user_list if item["name"]==psk["name"])
             except:
-                print("User {0} not found... Removing the psk ".format(psk["name"]).ljust(79, "."), end="", flush=True)
-                report = {"psk": psk["name"], "psk_deleted": False}
-                try:
-                    self.mist.delete_ppsk(psk["id"])
-                    print("\033[92m\u2714\033[0m")
-                    report["psk_deleted"] = True
-                except:              
-                    print('\033[31m\u2716\033[0m')
-                finally:
-                    self.report_delete.append(report)
+                if not  psk["name"] in self.mist.excluded_psks:                
+                    print("User {0} not found... Removing the psk ".format(psk["name"]).ljust(79, "."), end="", flush=True)
+                    report = {"psk": psk["name"], "psk_deleted": False}
+                    try:
+                        self.mist.delete_ppsk(psk["id"])
+                        print("\033[92m\u2714\033[0m")
+                        report["psk_deleted"] = True
+                    except:              
+                        print('\033[31m\u2716\033[0m')
+                    finally:
+                        self.report_delete.append(report)
         if not self.report_delete: print("No PSK to delete!")
 
 
