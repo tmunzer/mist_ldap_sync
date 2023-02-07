@@ -11,6 +11,7 @@ class Mist():
         self.ssid = config.get("ssid")
         self.psk_length = config.get("psk_length")
         self.psk_vlan = config.get("psk_vlan")
+        self.psk_max_usage = config.get("psk_max_usage")
         self.allowed_chars = config.get("allowed_chars")
         self.excluded_psks = config.get("excluded_psks")
         
@@ -49,7 +50,8 @@ class Mist():
             "name": user["name"],
             "ssid": self.ssid,
             "vlan_id": self.psk_vlan,
-            "passphrase": psk
+            "passphrase": psk,
+            "max_usage": self.psk_max_usage
         }
         try:
             url = "https://{0}/api/v1/{1}/{2}/psks".format(self.host, self.scope, self.scope_id)
