@@ -2,17 +2,18 @@ from ldap3 import Server, Connection, ALL
         
 class Mist_LDAP():
     def __init__(self, config):    
-        self.host = config["host"]
-        self.port = config["port"]
-        self.use_ssl = config["use_ssl"]
-        self.tls = config["tls"]
+        self.host = config.get("host")
+        self.port = config.get("port")
+        self.use_ssl = config.get("use_ssl")
+        self.tls = config.get("tls")
         if self.tls == "None": self.tls = None
-        self.bind_user= config["bind_user"]
-        self.bind_password= config["bind_password"]
-        self.base_dn= config["base_dn"]
-        self.search_group= config["search_group"]
-        self.user_name= config["user_name"]
-        self.user_email= config["user_email"]
+        self.bind_user= config.get("bind_user")
+        self.bind_password= config.get("bind_password")
+        self.base_dn= config.get("base_dn")
+        self.search_group= config.get("search_group")
+        self.recursive_search = config.get("recursive_search")
+        self.user_name= config.get("user_name")
+        self.user_email= config.get("user_email")
         self.server = Server(self.host, port=self.port, use_ssl=self.use_ssl,tls=self.tls)
 
 
@@ -23,7 +24,7 @@ class Mist_LDAP():
         return ad_user_list
 
     def _connect(self):
-        print("Contacting LDAP server on {0}:{1} (SSL: {2}) ".format(self.host, self.port, self.use_ssl).ljust(79, "."), end="", flush=True)
+        print(f"Contacting LDAP server on {self.host}:{self.port} (SSL: {self.use_ssl}) ".ljust(79, "."), end="", flush=True)
         try:
             conn = Connection(self.server, self.bind_user, self.bind_password, auto_bind=True, read_only=True)
             print("\033[92m\u2714\033[0m")
@@ -36,11 +37,18 @@ class Mist_LDAP():
     def _search(self, conn):
         print("Executing LDAP search ".ljust(79, "."), end="", flush=True)
         try:
-            conn.search(
-                self.base_dn, 
-                "(&(objectclass=person)(memberOf={0}))".format(self.search_group), 
-                attributes=[self.user_name, self.user_email, "objectClass"]
-                )
+            if self.recursive_search:
+                conn.search(
+                    self.base_dn, 
+                    f"(&(objectclass=person)(memberOf:1.2.840.113556.1.4.1941:={self.search_group}))",
+                    attributes=[self.user_name, self.user_email, "objectClass"]
+                    )
+            else:
+                conn.search(
+                    self.base_dn, 
+                    f"(&(objectclass=person)(memberOf={self.search_group}))",
+                    attributes=[self.user_name, self.user_email, "objectClass"]
+                    )
             print("\033[92m\u2714\033[0m")
             return conn
         except:

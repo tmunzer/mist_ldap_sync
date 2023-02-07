@@ -82,6 +82,7 @@ def _load_mist(verbose):
     elif mist_config["psk_vlan"]:
         try:
             mist_config["psk_vlan"] = int(mist_config["psk_vlan"])
+            print("\033[92m\u2714\033[0m")
         except:
             print("ERROR: Wrong MIST_PSK_VLAN value. Must be an integer")
             exit(1)
@@ -118,6 +119,7 @@ def _load_ldap(verbose):
         "bind_password": os.environ.get("LDAP_BIND_PASSWORD", default=""),
         "base_dn": os.environ.get("LDAP_BASE_DN", default=None),
         "search_group": os.environ.get("LDAP_SEARCH_GROUP", default=None),
+        "recursive_search": eval(os.environ.get("LDAP_RECURSIVE_SEARCH", default=False)),
         "user_name": os.environ.get("LDAP_USER_NAME", default="userPrincipalName"),
         "user_email": os.environ.get("LDAP_USER_EMAIL", default="mail")
     }    
@@ -140,15 +142,16 @@ def _load_ldap(verbose):
         print("".ljust(80, "-"))
         print(" LDAP CONFIG ".center(80))
         print("")
-        print("host         : {0}".format(ldap_config["host"]))
-        print("port         : {0}".format(ldap_config["port"]))
-        print("use_ssl      : {0}".format(ldap_config["use_ssl"]))
-        print("tls          : {0}".format(ldap_config["tls"]))
-        print("bind_user    : {0}".format(ldap_config["bind_user"]))
-        print("base_dn      : {0}".format(ldap_config["base_dn"]))
-        print("search_group : {0}".format(ldap_config["search_group"]))
-        print("user_name    : {0}".format(ldap_config["user_name"]))
-        print("user_email   : {0}".format(ldap_config["user_email"]))
+        print("host             : {0}".format(ldap_config["host"]))
+        print("port             : {0}".format(ldap_config["port"]))
+        print("use_ssl          : {0}".format(ldap_config["use_ssl"]))
+        print("tls              : {0}".format(ldap_config["tls"]))
+        print("bind_user        : {0}".format(ldap_config["bind_user"]))
+        print("base_dn          : {0}".format(ldap_config["base_dn"]))
+        print("search_group     : {0}".format(ldap_config["search_group"]))
+        print("recursive_search : {0}".format(ldap_config["recursive_search"]))
+        print("user_name        : {0}".format(ldap_config["user_name"]))
+        print("user_email       : {0}".format(ldap_config["user_email"]))
         print("")
 
     return ldap_config

@@ -1,4 +1,4 @@
 ldap3
 requests
 qrcode[pil]
-dotenv
+python-dotenv
