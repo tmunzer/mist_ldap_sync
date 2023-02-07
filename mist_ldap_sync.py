@@ -60,8 +60,8 @@ def _load_mist(verbose):
         "scope_id": os.environ.get("MIST_SCOPE_ID", default=None),
         "ssid": os.environ.get("MIST_SSID", default=None),
         "psk_length": int(os.environ.get("MIST_PSK_LENGTH", default=12)),
-        "psk_vlan": int(os.environ.get("MIST_PSK_VLAN")),
-        "psk_max_usage": int(os.environ.get("MIST_PSK_MAX_USAGE")),
+        "psk_vlan": os.environ.get("MIST_PSK_VLAN"),
+        "psk_max_usage": os.environ.get("MIST_PSK_MAX_USAGE", 0),
         "allowed_chars": os.environ.get("MIST_PSK_ALLOWED_CHARS", default="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"),
         "excluded_psks": os.environ.get("MIST_PSK_EXCLUDED", default=""),
     }
@@ -81,12 +81,13 @@ def _load_mist(verbose):
         print("ERROR: Missing MIST_SSID parameters")
         exit(1)
     elif mist_config["psk_vlan"]:
-        try:
-            mist_config["psk_vlan"] = int(mist_config["psk_vlan"])
-            print("\033[92m\u2714\033[0m")
-        except:
-            print("ERROR: Wrong MIST_PSK_VLAN value. Must be an integer")
-            exit(1)
+        if mist_config["psk_vlan"]:
+            try:
+                mist_config["psk_vlan"] = int(mist_config["psk_vlan"])
+                print("\033[92m\u2714\033[0m")
+            except:
+                print("ERROR: Wrong MIST_PSK_VLAN value. Must be an integer")
+                exit(1)
     elif mist_config["psk_max_usage"]:
         try:
             mist_config["psk_max_usage"] = int(mist_config["psk_max_usage"])
