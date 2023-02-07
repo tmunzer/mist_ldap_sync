@@ -4,14 +4,15 @@ import string
 
 class Mist():
     def __init__(self, config):
-        self.host = config["host"]
-        self.apitoken = config["api_token"]
-        self.scope = config["scope"]
-        self.scope_id = config["scope_id"]
-        self.ssid = config["ssid"]
-        self.psk_length = config["psk_length"]
-        self.allowed_chars = config["allowed_chars"]
-        self.excluded_psks = config["excluded_psks"]
+        self.host = config.get("host")
+        self.apitoken = config.get("api_token")
+        self.scope = config.get("scope")
+        self.scope_id = config.get("scope_id")
+        self.ssid = config.get("ssid")
+        self.psk_length = config.get("psk_length")
+        self.psk_vlan = config.get("psk_vlan")
+        self.allowed_chars = config.get("allowed_chars")
+        self.excluded_psks = config.get("excluded_psks")
         
     def _get_random_alphanumeric_string(self):
         result_str = ''.join((random.choice(self.allowed_chars) for i in range(self.psk_length)))
@@ -47,8 +48,8 @@ class Mist():
             "usage": "multi",
             "name": user["name"],
             "ssid": self.ssid,
-            "passphrase": psk,
-            "id": 1
+            "vlan_id": self.psk_vlan,
+            "passphrase": psk
         }
         try:
             url = "https://{0}/api/v1/{1}/{2}/psks".format(self.host, self.scope, self.scope_id)

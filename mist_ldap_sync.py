@@ -60,29 +60,31 @@ def _load_mist(verbose):
         "scope_id": os.environ.get("MIST_SCOPE_ID", default=None),
         "ssid": os.environ.get("MIST_SSID", default=None),
         "psk_length": int(os.environ.get("MIST_PSK_LENGTH", default=12)),
+        "psk_vlan": os.environ.get("MIST_PSK_VLAN"),
         "allowed_chars": os.environ.get("MIST_PSK_ALLOWED_CHARS", default="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"),
         "excluded_psks": os.environ.get("MIST_PSK_EXCLUDED", default=""),
     }
     if not mist_config["host"]: 
-        print("ERROR: Missing the LDAP HOST")
-        print("ERROR: Missing the MIST HOST")
+        print("ERROR: Missing MIST_HOST parameters")
         exit(1)
     elif not mist_config["api_token"]: 
-        print("ERROR: Missing the LDAP HOST")
-        print("ERROR: Missing the API TOKEN")
+        print("ERROR: Missing MIST_API_TOKEN parameters")
         exit(1)
     elif not mist_config["scope"]: 
-        print("ERROR: Missing the LDAP HOST")
-        print("ERROR: Missing the SCOPE")
+        print("ERROR: Missing MIST_SCOPE parameters")
         exit(1)
     elif not mist_config["scope_id"]: 
-        print("ERROR: Missing the LDAP HOST")
-        print("ERROR: Missing the scope_id")
+        print("ERROR: Missing MIST_SCOPE_ID parameters")
         exit(1)
     elif not mist_config["ssid"]: 
-        print("ERROR: Missing the LDAP HOST")
-        print("ERROR: Missing the ssid")
+        print("ERROR: Missing MIST_SSID parameters")
         exit(1)
+    elif mist_config["psk_vlan"]:
+        try:
+            mist_config["psk_vlan"] = int(mist_config["psk_vlan"])
+        except:
+            print("ERROR: Wrong MIST_PSK_VLAN value. Must be an integer")
+            exit(1)
     else:
         print("\033[92m\u2714\033[0m")
 
@@ -95,6 +97,7 @@ def _load_mist(verbose):
         print("scope_id      : {0}".format(mist_config["scope_id"]))
         print("ssid          : {0}".format(mist_config["ssid"]))
         print("psk_length    : {0}".format(mist_config["psk_length"]))
+        print("psk_vlan      : {0}".format(mist_config["psk_vlan"]))
         print("allowed_chars : {0}".format(mist_config["allowed_chars"]))
         print("excluded_psks : {0}".format(mist_config["excluded_psks"]))
         print("")
@@ -269,6 +272,7 @@ MIST_SCOPE="orgs"
 MIST_SCOPE_ID=""
 MIST_SSID=""
 MIST_PSK_LENGTH=10
+MIST_PSK_VLAN=10
 MIST_PSK_ALLOWED_CHARS="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 SMTP_ENABLED=True

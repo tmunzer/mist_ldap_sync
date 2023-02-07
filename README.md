@@ -74,6 +74,7 @@ You can use the `-c` option to check your configuration.
 |MIST_SCOPE_ID | string | | Required. org_id or site_id where to create the PSKs |
 |MIST_SSID | string | | Required. SSID name used to create the PSKs |
 |MIST_PSK_LENGTH | integer | 12 | PSK length |
+|MIST_PSK_VLAN | integer |  | PSK VLAN (The VLAN must be allowed in the WLAN configuration) |
 |MIST_PSK_ALLOWED_CHARS | string | "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789" | Allowed characters in the PSK |
 |MIST_PSK_EXCLUDED | array | | Name of the PSKs to exclude from the automated process |
 |SMTP_ENABLED | boolean | False | |
