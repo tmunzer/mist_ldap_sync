@@ -28,21 +28,22 @@ class Mist_SMTP():
             self.report_enabled = False
             
 
-    def _send_email(self, receivers, msg, log_message):
+    def _send_email(self, receivers, msg, log_message, dry_run:bool=False):
         print(log_message, end="", flush=True)
-        #try:             
-        with self.smtp(self.host, self.port) as smtp:
-            if self.username and self.password:
-                smtp.login(self.username, self.password)
-            smtp.sendmail(self.from_email, receivers, msg)   
-        print("\033[92m\u2714\033[0m")
-        return True
-        # except:              
-        #     print('\033[31m\u2716\033[0m')
-        #     return False
+        try:             
+            if not dry_run:
+                with self.smtp(self.host, self.port) as smtp:
+                    if self.username and self.password:
+                        smtp.login(self.username, self.password)
+                    smtp.sendmail(self.from_email, receivers, msg)   
+            print("\033[92m\u2714\033[0m")
+            return True
+        except:              
+            print('\033[31m\u2716\033[0m')
+            return False
 
 
-    def send_psk(self, psk, ssid, user_name, user_email):
+    def send_psk(self, psk, ssid, user_name, user_email, dry_run:bool=False):
         if self.email_psk_to_users:
             msg = MIMEMultipart('alternative')
             msg["Subject"] = "Your Personal Wi-Fi access code"
@@ -62,11 +63,11 @@ class Mist_SMTP():
             msg_body = MIMEText(html, "html")
             msg.attach(msg_body)
 
-            return self._send_email(user_email, msg.as_string(), "    Sending the email ".ljust(79, "."))
+            return self._send_email(user_email, msg.as_string(), "    Sending the email ".ljust(79, "."), dry_run)
 
 
-    def send_report(self, added_psks, removed_psks):
-        if self.report_enabled:
+    def send_report(self, added_psks, removed_psks, dry_run:bool=False):
+        if self.report_enabled and not dry_run:
             print("Generating report ".ljust(79, "."), end="", flush=True)
             msg = MIMEMultipart()
             msg["Subject"] = "Automated PSK Report"
@@ -96,5 +97,7 @@ class Mist_SMTP():
                 msg["To"] = receiver
                 self._send_email(receiver, msg.as_string(), "Sending report email to {0} ".format(receiver).ljust(79, "."))
             return 
+        elif dry_run:
+            print("Dry Run... Email Report disabled...")
         else:
             print("Report disabled")

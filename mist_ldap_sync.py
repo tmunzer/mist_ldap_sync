@@ -162,7 +162,7 @@ def _load_ldap(verbose):
 ############################################# FUNCTIONS
 #######################################################################################################################################
 class Main():
-    def __init__(self, ldap_config, mist_config, smtp_config):
+    def __init__(self, ldap_config, mist_config, smtp_config, dry_run):
         self._print_part("INIT", False)
         self.ldap = Mist_LDAP(ldap_config)
         self.mist = Mist(mist_config)
@@ -171,18 +171,23 @@ class Main():
         self.report_add = []
         self.ldap_user_list = []
         self.mist_user_list = []
+        self.dry_run = dry_run
 
     def sync(self):
+        if self.dry_run:
+            dry_run_string = " DRY RUN - "
+        else:
+            dry_run_string = ""
         self._print_part("LDAP SEARCH")
         self.ldap_user_list = self.ldap.get_users()
         self._print_part("MIST REQUEST")
         self.mist_user_list = self.mist.get_users()
-        self._print_part("DELETE")
+        self._print_part(f"{dry_run_string}DELETE")
         self._delete_psk()
-        self._print_part("CREATE")
+        self._print_part(f"{dry_run_string}CREATE")
         self._create_psk()
         self._print_part("REPORT")
-        self.smtp.send_report(self.report_add, self.report_delete)
+        self.smtp.send_report(self.report_add, self.report_delete, self.dry_run)
 
     def _print_part(self, part, space=True):
         if space: print()
@@ -195,10 +200,10 @@ class Main():
                 next(item["name"] for item in self.ldap_user_list if item["name"]==psk["name"])
             except:
                 if not  psk["name"] in self.mist.excluded_psks:                
-                    print("User {0} not found... Removing the psk ".format(psk["name"]).ljust(79, "."), end="", flush=True)
+                    print(f"User {psk['name']} not found... Removing the psk ".ljust(79, "."), end="", flush=True)
                     report = {"psk": psk["name"], "psk_deleted": False}
                     try:
-                        self.mist.delete_ppsk(psk["id"])
+                        self.mist.delete_ppsk(psk["id"], self.dry_run)
                         print("\033[92m\u2714\033[0m")
                         report["psk_deleted"] = True
                     except:              
@@ -217,15 +222,15 @@ class Main():
                 print("New User detected ".ljust(80, "-"))
                 report = {"name": user["name"], "email": user["email"], "psk_added": False, "email_sent": False}
                 if user["name"]:
-                    print("    name : {0}".format(user["name"]))
+                    print(f"    name : {user['name']}")
                 if user["email"]:
-                    print("    email: {0}".format(user["email"]))
+                    print(f"    email: {user['email']}".format())
 
-                psk = self.mist.create_ppsk(user)
+                psk = self.mist.create_ppsk(user, self.dry_run)
                 if psk:
                     report["psk_added"] = True
                     if user["email"]:
-                        res = self.smtp.send_psk(psk["passphrase"], psk["ssid"], user["name"], user["email"])
+                        res = self.smtp.send_psk(psk["passphrase"], psk["ssid"], user["name"], user["email"], self.dry_run)
                         report["email_sent"] = res
                 self.report_add.append(report)
         if not self.report_add: print("No PSK to create!")
@@ -235,11 +240,11 @@ def _chck_only():
         _load_mist(True)
         _load_smtp(True)
 
-def _run(check):
+def _run(check, dry_run):
         ldap_config = _load_ldap(check)
         mist_config= _load_mist(check)
         smtp_config =_load_smtp(check)
-        main = Main(ldap_config, mist_config, smtp_config)
+        main = Main(ldap_config, mist_config, smtp_config, dry_run)
         main.sync()        
 
 def usage():
@@ -250,6 +255,9 @@ Written by Thomas Munzer (tmunzer@juniper.net)
 Usage:
 -c, --check         Check the configuration file only and display the values 
                     (passowrds and tokens are not shown)
+
+-d, --dry-run       Dry Run. Execute all the tasks, but does not create/delte
+                    PPSKs, and does not send any email
 
 -e, --env=file      Configuration file location. By default the script
                     is looking for a ".env" file in the script root folder
@@ -303,7 +311,7 @@ Github: https://github.com/tmunzer/mist_ldap_sync
 
 """)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "ce:ah", ["check", "env=", "all", "help"])
+        opts, args = getopt.getopt(sys.argv[1:], "ce:ahd", ["check", "env=", "all", "help", "dry-run"])
     except getopt.GetoptError as err:
         print(err)
         usage()
@@ -312,6 +320,7 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     check = False
     check_only = False
     env_file = None
+    dry_run=False
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -322,6 +331,8 @@ Github: https://github.com/tmunzer/mist_ldap_sync
             check=True
         elif o in ["-e", "--env"]:
             env_file = a
+        elif o in ["-d", "--dry-run"]:
+            dry_run = True
         else:
             assert False, "unhandled option"
   
@@ -333,7 +344,7 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     if check_only:
         _chck_only()
     else: 
-        _run(check)
+        _run(check, dry_run)
 
 
 #######################################################################################################################################

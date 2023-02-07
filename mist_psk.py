@@ -36,12 +36,16 @@ class Mist():
         response = mist_get(self.apitoken, url)
         return response
 
-    def delete_ppsk(self, psk_id):
-        url = "https://{0}/api/v1/{1}/{2}/psks/{3}".format(self.host, self.scope, self.scope_id, psk_id)
-        response = mist_delete(self.apitoken, url)
-        return response
+    def delete_ppsk(self, psk_id, dry_run:bool=False):
+        if dry_run:
+            return True
+        else:
+            url = "https://{0}/api/v1/{1}/{2}/psks/{3}".format(self.host, self.scope, self.scope_id, psk_id)
+            response = mist_delete(self.apitoken, url)
+            return response
+        
 
-    def create_ppsk(self, user):
+    def create_ppsk(self, user, dry_run:bool=False):
         print("    Creating the PPSK for user ".ljust(79, "."), end="", flush=True)
         psk = self._get_random_alphanumeric_string()
         psk_data = {
@@ -52,8 +56,12 @@ class Mist():
             "passphrase": psk
         }
         try:
-            url = "https://{0}/api/v1/{1}/{2}/psks".format(self.host, self.scope, self.scope_id)
-            res = mist_post(self.apitoken, url, psk_data)["result"] 
+            if dry_run:
+                res = psk_data
+                res["id"] = 1
+            else:
+                url = "https://{0}/api/v1/{1}/{2}/psks".format(self.host, self.scope, self.scope_id)
+                res = mist_post(self.apitoken, url, psk_data)["result"] 
             if "id" in res and "ssid" in res and "passphrase" in res:       
                 print("\033[92m\u2714\033[0m")
                 return res
