@@ -348,7 +348,7 @@ Github: https://github.com/tmunzer/mist_ldap_sync
             assert False, "unhandled option"
   
     if env_file:
-        load_dotenv(dotend_path=env_file)
+        load_dotenv(dotenv_path=env_file)
     else:
         load_dotenv()
 
