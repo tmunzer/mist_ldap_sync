@@ -20,7 +20,7 @@ class Mist():
         return result_str
 
     def get_users(self, mist_user_list=[]):
-        print("Requesting {0} to get the list of PSKs ".format(self.host).ljust(79, "."), end="", flush=True)
+        print(f"Requesting {self.host} to get the list of PSKs ".ljust(79, "."), end="", flush=True)
         try:
             res = self.get_ppks()
             if "result" in res:
@@ -33,7 +33,7 @@ class Mist():
             exit(2)
 
     def get_ppks(self):
-        url = "https://{0}/api/v1/{1}/{2}/psks?ssid={3}".format(self.host, self.scope, self.scope_id, self.ssid)
+        url = f"https://{self.host}/api/v1/{self.scope}/{self.scope_id}/psks?ssid={self.ssid}"
         response = mist_get(self.apitoken, url)
         return response
 
@@ -41,7 +41,7 @@ class Mist():
         if dry_run:
             return True
         else:
-            url = "https://{0}/api/v1/{1}/{2}/psks/{3}".format(self.host, self.scope, self.scope_id, psk_id)
+            url =  f"https://{self.host}/api/v1/{self.scope}/{self.scope_id}/psks/{psk_id}"
             response = mist_delete(self.apitoken, url)
             return response
         
@@ -62,7 +62,7 @@ class Mist():
                 res = psk_data
                 res["id"] = 1
             else:
-                url = "https://{0}/api/v1/{1}/{2}/psks".format(self.host, self.scope, self.scope_id)
+                url =  f"https://{self.host}/api/v1/{self.scope}/{self.scope_id}/psks"
                 res = mist_post(self.apitoken, url, psk_data)["result"] 
             if "id" in res and "ssid" in res and "passphrase" in res:       
                 print("\033[92m\u2714\033[0m")
