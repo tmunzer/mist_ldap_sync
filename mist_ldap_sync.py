@@ -245,7 +245,7 @@ class Main():
                 self.report_add.append(report)
         if not self.report_add: print("No PSK to create!")
 
-def _chck_only():
+def _check_only():
         _load_ldap(True)
         _load_mist(True)
         _load_smtp(True)
@@ -353,7 +353,7 @@ Github: https://github.com/tmunzer/mist_ldap_sync
         load_dotenv()
 
     if check_only:
-        _chck_only()
+        _check_only()
     else: 
         _run(check, dry_run)
 
