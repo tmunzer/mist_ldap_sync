@@ -27,6 +27,7 @@ def mist_get(token, url, query=None, page=1, limit=None):
     Return: HTTP response"""
     try:
         headers = {}
+        final_url = url
         headers['Content-Type'] = "application/json"
         headers['Authorization'] = "Token {0}".format(token)
         html_query = []
@@ -35,9 +36,9 @@ def mist_get(token, url, query=None, page=1, limit=None):
                 html_query.append(f"{query_param}={query[query_param]}")
         if limit:html_query.append(f"limit={limit}")
         if page: html_query.append(f"page={page}")
-        if html_query: url += f"?{'&'.join(html_query)}"
-        # print("Request > GET %s" % url)
-        resp = requests.get(url, headers=headers)
+        if html_query: final_url += f"?{'&'.join(html_query)}"
+        #print("\r\nnRequest > GET %s" % final_url)
+        resp = requests.get(final_url, headers=headers)
         resp.raise_for_status()
     except HTTPError as http_err:
         print(f'HTTP error occurred: {http_err}')  # Python 3.6
