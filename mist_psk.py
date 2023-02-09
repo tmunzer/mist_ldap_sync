@@ -33,8 +33,8 @@ class Mist():
             exit(2)
 
     def get_ppks(self):
-        url = f"https://{self.host}/api/v1/{self.scope}/{self.scope_id}/psks?ssid={self.ssid}"
-        response = mist_get(self.apitoken, url)
+        url = f"https://{self.host}/api/v1/{self.scope}/{self.scope_id}/psks"
+        response = mist_get(self.apitoken, url, query={"ssid": self.ssid}, limit=1000)
         return response
 
     def delete_ppsk(self, psk_id, dry_run:bool=False):

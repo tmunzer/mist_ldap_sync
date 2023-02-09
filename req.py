@@ -21,7 +21,7 @@ def _response(resp, uri="", multi_pages_result=None):
         #console.debug("Response: %s" % error)
     return {"result": result, "status_code": resp.status_code, "error": error, "uri":uri}
 
-def mist_get(token, url, query={}, page=None, limit=None):
+def mist_get(token, url, query=None, page=1, limit=None):
     """GET HTTP Request
     Params: uri, HTTP query
     Return: HTTP response"""
@@ -29,14 +29,14 @@ def mist_get(token, url, query={}, page=None, limit=None):
         headers = {}
         headers['Content-Type'] = "application/json"
         headers['Authorization'] = "Token {0}".format(token)
-        html_query = ""
-        if not query == {}:
+        html_query = []
+        if query:
             for query_param in query:
-                html_query += "%s=%s&" %(query_param, query[query_param])
-        if limit: html_query += "limit=%s&" %limit
-        if page: html_query += "page=%s" %page
-        if html_query: url += "?{0}".format(html_query)
-        #console.debug("Request > GET %s" % url)
+                html_query.append(f"{query_param}={query[query_param]}")
+        if limit:html_query.append(f"limit={limit}")
+        if page: html_query.append(f"page={page}")
+        if html_query: url += f"?{'&'.join(html_query)}"
+        # print("Request > GET %s" % url)
         resp = requests.get(url, headers=headers)
         resp.raise_for_status()
     except HTTPError as http_err:
@@ -51,7 +51,7 @@ def mist_get(token, url, query={}, page=None, limit=None):
             x_page_page = int(resp.headers["X-Page-Page"])
             x_page_total = int(resp.headers["X-Page-Total"])
             if x_page_limit * x_page_page < x_page_total:
-                content+=mist_get(url, query, page + 1, limit)["result"]
+                content+=mist_get(token, url, query, page + 1, limit)["result"]
             return _response(resp, url, content)
         else:                
             return _response(resp, url)
