@@ -1,13 +1,27 @@
-import mistapi
+"""
+-------------------------------------------------------------------------------
+
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/mist_ldap_sync/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
+Script managing the communication with the Mist Cloud
+"""
 import random
 import logging
 import sys
+import mistapi
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 
 class Mist:
+    """
+    Class managing the requests to the Mist Cloud
+    """
     def __init__(self, config):
         self.scope = config.get("scope")
         self.scope_id = config.get("scope_id")
@@ -44,7 +58,7 @@ class Mist:
             sys.exit(2)
 
     def get_ppks(self):
-        if self.scope == "org":
+        if self.scope == "orgs":
             response = mistapi.api.v1.orgs.psks.listOrgPsks(
                 self.apisession, self.scope_id, limit=1000
             )
@@ -61,15 +75,15 @@ class Mist:
             LOGGER.info("dry run mode... I'm not deleting the psk")
             return True
         else:
-            if self.scope == "org":
+            if self.scope == "orgs":
                 response = mistapi.api.v1.orgs.psks.deleteOrgPsk(
                     self.apisession, self.scope_id, psk_id
-                )
+                ).data
             else:
                 response = mistapi.api.v1.sites.psks.listSitePsks(
                     self.apisession, self.scope_id, psk_id
-                )
-            return response.data
+                ).data
+            return response
 
     def create_ppsk(self, user, dry_run: bool = False):
         print(" Creating the PPSK for user ".ljust(79, "."), end="", flush=True)
@@ -85,26 +99,27 @@ class Mist:
         try:
             LOGGER.debug(f"creating psk for user {user['name']}")
             if dry_run:
-                res = psk_data
-                res["id"] = 1
+                response = psk_data                
+                response["id"] = 1
                 LOGGER.info("dry run mode... I'm not creating the psk")
             else:
-                if self.scope == "org":
+                if self.scope == "orgs":
                     response = mistapi.api.v1.orgs.psks.createOrgPsk(
                         self.apisession, self.scope_id, psk_data
-                    )
+                    ).data
                 else:
                     response = mistapi.api.v1.sites.psks.createSitePsk(
                         self.apisession, self.scope_id, psk_data
-                    )
+                    ).data
+            LOGGER.debug(response)
             if (
-                response.data.get("id")
-                and response.data.get("ssid")
-                and response.data.get("passphrase")
+                response.get("id")
+                and response.get("ssid")
+                and response.get("passphrase")
             ):
                 print("\033[92m\u2714\033[0m")
                 LOGGER.info(f"psk created")
-                return res
+                return response
             else:
                 print("\033[31m\u2716\033[0m")
                 LOGGER.error(f"psk not created")
