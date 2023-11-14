@@ -1,3 +1,69 @@
+"""
+-------------------------------------------------------------------------------
+
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/mist_ldap_sync/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
+Python Script to rotate Mist PSK.
+
+
+---
+Usage:
+-c, --check         Check the configuration file only and display the values 
+                    (passowrds and tokens are not shown)
+
+-d, --dry-run       Dry Run. Execute all the tasks, but does not create/delte
+                    PPSKs, and does not send any email
+
+-e, --env=file      Configuration file location. By default the script
+                    is looking for a ".env" file in the script root folder
+
+-a, --all           Check the configuration file (-c) and run the script
+
+-l, --log-file      Location of the log files
+
+---
+Configuration file example:
+LDAP_HOST="dc.myserver.com"
+LDAP_PORT=389
+LDAP_USE_SSL=False
+LDAP_TLS=None
+LDAP_BIND_USER="administrator@myserver.com"
+LDAP_BIND_PASSWORD="secret"
+LDAP_BASE_DN="DC=myserver,DC=com"
+LDAP_SEARCH_GROUP="CN=dot11,OU=LAB Groups,DC=myserver,DC=com"
+LDAP_USER_NAME="userPrincipalName"
+LDAP_USER_EMAIL="mail"
+
+MIST_HOST="api.mist.com"
+MIST_API_TOKEN=""
+MIST_SCOPE="orgs"
+MIST_SCOPE_ID=""
+MIST_SSID=""
+MIST_PSK_LENGTH=10
+MIST_PSK_MAX_USAGE=3
+MIST_PSK_VLAN=10
+MIST_PSK_ALLOWED_CHARS="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+SMTP_ENABLED=True
+SMTP_HOST="smtp.myserver.com"
+SMTP_PORT=465
+SMTP_USE_SSL=True
+SMTP_USERNAME="user@myserver.com"
+SMTP_PASSWORD="secret"
+SMTP_FROM_NAME="Wi-Fi Access"
+SMTP_FROM_EMAIL=""
+SMTP_LOGO_URL="https://cdn.mist.com/wp-content/uploads/logo.png"
+SMTP_EMAIL_PSK_TO_USERS=True
+SMTP_ENABLE_QRCODE=True
+SMTP_REPORT_ENABLED=True
+SMTP_REPORT_RECEIVERS="user.1@myserver.com,user.2@myserver.com"
+
+"""
+
 import os
 import sys
 import logging
@@ -325,6 +391,8 @@ Usage:
                     is looking for a ".env" file in the script root folder
 
 -a, --all           Check the configuration file (-c) and run the script
+
+-l, --log-file      Location of the log files
 
 ---
 Configuration file example:
