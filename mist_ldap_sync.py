@@ -3,8 +3,8 @@ import sys
 import logging
 import getopt
 from dotenv import load_dotenv
-from mist_smtp import Mist_SMTP
-from mist_ldap import Mist_LDAP
+from mist_smtp import MistSmtp
+from mist_ldap import MistLdap
 from mist_psk import Mist
 
 
@@ -92,6 +92,10 @@ def _load_mist(verbose):
     elif not mist_config["scope"]:
         print("ERROR: Missing MIST_SCOPE parameters")
         LOGGER.critical("Missing MIST_SCOPE parameters")
+        sys.exit(1)
+    elif mist_config["scope"] not in ["orgs", "sites"]:
+        print("ERROR: MIST_SCOPE parameters invalid. Only `orgs` and `sites` are allowed")
+        LOGGER.critical("MIST_SCOPE parameters invalid. Only `orgs` and `sites` are allowed")
         sys.exit(1)
     elif not mist_config["scope_id"]:
         print("ERROR: Missing MIST_SCOPE_ID parameters")
@@ -219,9 +223,9 @@ def _load_ldap(verbose):
 class Main():
     def __init__(self, ldap_config, mist_config, smtp_config, dry_run):
         self._print_part("INIT", False)
-        self.ldap = Mist_LDAP(ldap_config)
+        self.ldap = MistLdap(ldap_config)
         self.mist = Mist(mist_config)
-        self.smtp = Mist_SMTP(smtp_config)
+        self.smtp = MistSmtp(smtp_config)
         self.report_delete = []
         self.report_add = []
         self.ldap_user_list = []

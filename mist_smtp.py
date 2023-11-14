@@ -1,3 +1,14 @@
+"""
+-------------------------------------------------------------------------------
+
+    Written by Thomas Munzer (tmunzer@juniper.net)
+    Github repository: https://github.com/tmunzer/mist_ldap_sync/
+
+    This script is licensed under the MIT License.
+
+-------------------------------------------------------------------------------
+Script managing the communication with the SMTP Server
+"""
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -5,7 +16,10 @@ from email.mime.image import MIMEImage
 from datetime import datetime
 from mist_qrcode import get_qrcode_as_html
 
-class Mist_SMTP():
+class MistSmtp():
+    """
+    Class managing the requests to the SMTP Server
+    """
     def __init__(self, config):
         if (config["enabled"]):
             self.host = config["host"]
@@ -26,11 +40,10 @@ class Mist_SMTP():
         else:
             self.email_psk_to_users = False
             self.report_enabled = False
-            
 
     def _send_email(self, receivers, msg, log_message, dry_run:bool=False):
         print(log_message, end="", flush=True)
-        try:             
+        try:
             if not dry_run:
                 with self.smtp(self.host, self.port) as smtp:
                     if self.username and self.password:
@@ -38,21 +51,20 @@ class Mist_SMTP():
                     smtp.sendmail(self.from_email, receivers, msg)   
             print("\033[92m\u2714\033[0m")
             return True
-        except:              
+        except:
             print('\033[31m\u2716\033[0m')
             return False
-
 
     def send_psk(self, psk, ssid, user_name, user_email, dry_run:bool=False):
         if self.email_psk_to_users:
             msg = MIMEMultipart('alternative')
             msg["Subject"] = "Your Personal Wi-Fi access code"
-            msg["From"] = "{0} <{1}>".format(self.from_name, self.from_email)
-            msg["To"] = "{0} <{1}>".format(user_name, user_email)
+            msg["From"] = f"{self.from_name} <{self.from_email}>"
+            msg["To"] = f"{user_name} <{user_email}>"
 
             if self.enable_qrcode:
                 qr_info = "You can also scan the QRCode below to configure your device:"
-                qr_html = get_qrcode_as_html(ssid, psk)                
+                qr_html = get_qrcode_as_html(ssid, psk)
             else:
                 qr_info = ""
                 qr_html = ""
@@ -71,32 +83,42 @@ class Mist_SMTP():
             print("Generating report ".ljust(79, "."), end="", flush=True)
             msg = MIMEMultipart()
             msg["Subject"] = "Automated PSK Report"
-            msg["From"] = "{0} <{1}>".format(self.from_name, self.from_email)
-            
+            msg["From"] = f"{self.from_name} <{self.from_email}>"
+
             add_table=""
             for psk in added_psks:
                 name = psk["name"] if "name" in psk else ""
                 email = psk["email"] if "email" in psk else ""
                 created = "Yes" if psk["psk_added"] else "No"
                 sent = "Yes" if psk["email_sent"] else "No"
-                add_table += "<tr><td>{0}</td><td>{1}</td><td>{2}</td><td>{3}</td></tr>".format(name, email, created, sent )
+                add_table += f"<tr><td>{name}</td><td>{email}</td><td>{created}</td><td>{sent}</td></tr>"
 
             delete_table=""
             for psk in removed_psks:
                 name = psk["psk"] if "psk" in psk else ""
                 deleted = "Yes" if psk["psk_deleted"] else "No"
-                delete_table += "<tr><td>{0}</td><td>{1}</td></tr>".format(name, deleted)
+                delete_table += f"<tr><td>{name}</td><td>{deleted}</td></tr>"
             with open("report_template.html", "r") as template:
                 html = template.read()
-            html = html.format(self.logo_url, datetime.today(), len(added_psks), add_table, len(removed_psks), delete_table)
+            html = html.format(
+                    self.logo_url,
+                    datetime.today(),
+                    len(added_psks),
+                    add_table,
+                    len(removed_psks),
+                    delete_table
+                )
             msg_body = MIMEText(html, "html")
             msg.attach(msg_body)
 
             print("\033[92m\u2714\033[0m")
             for receiver in self.report_receivers:
                 msg["To"] = receiver
-                self._send_email(receiver, msg.as_string(), "Sending report email to {0} ".format(receiver).ljust(79, "."))
-            return 
+                self._send_email(
+                        receiver, msg.as_string(),
+                        f"Sending report email to {receiver} ".ljust(79, ".")
+                    )
+            return
         elif dry_run:
             print("Dry Run... Email Report disabled...")
         else:

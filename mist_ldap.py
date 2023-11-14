@@ -18,7 +18,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
 
-class Mist_LDAP:
+class MistLdap:
     """
     Class managing the requests to the LDAP/LDAPS server
     """
