@@ -2,3 +2,4 @@ ldap3
 requests
 qrcode[pil]
 python-dotenv
+mistapi
