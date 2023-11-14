@@ -26,7 +26,7 @@ class Mist_LDAP():
     def _connect(self):
         print(f"Contacting LDAP server on {self.host}:{self.port} (SSL: {self.use_ssl}) ".ljust(79, "."), end="", flush=True)
         try:
-            conn = Connection(self.server, self.bind_user, self.bind_password, auto_bind=True, read_only=True)
+            conn = Connection(self.server, self.bind_user, self.bind_password, auto_bind=True, read_only=True, auto_range=True)
             print("\033[92m\u2714\033[0m")
             return conn
         except:
