@@ -124,9 +124,9 @@ class MistLdap:
                     and self.user_name in entry['attributes']
                 ):
                     user = {
-                    "name" : str(entry['attributes'][self.user_name])
+                        "name" : str(entry['attributes'][self.user_name])
                     }
-                    if self.user_email in entry:
+                    if self.user_email in entry['attributes']:
                         user["email"] = str(entry['attributes'][self.user_email])
                     else:
                         user["email"] = ""
