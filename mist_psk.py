@@ -128,3 +128,87 @@ class Mist:
             print("\033[31m\u2716\033[0m")
             LOGGER.critical("Exception occurred", exc_info=True)
             return None
+
+    def create_ppsk_bulk(self, users, dry_run: bool = False):
+        if dry_run:
+            dry_run_string = "DRY RUN - "
+        else:
+            dry_run_string = ""
+        stop_index = len(users)
+        run = 0
+        batch_size = 100
+        while run * batch_size < stop_index:
+            user_names = []
+            run += 1
+            start = (run - 1) * batch_size
+            stop = run * batch_size
+            psks_to_create = users[ start : stop ]
+            psks_data = []
+            print()
+            print(
+                    f" {dry_run_string}BATCH {start} "
+                    f"to {stop} ".center(79, "-")
+                )
+            for user in psks_to_create:
+                LOGGER.debug(
+                        f"create_ppsk_bulk:create_ppsk_bulk:"
+                        f"creating psk for user {user['name']}"
+                    )
+                passphrase = self._get_random_alphanumeric_string()
+                psk = {
+                    "usage": "multi",
+                    "name": user["name"],
+                    "ssid": self.ssid,
+                    "vlan_id": self.psk_vlan,
+                    "passphrase": passphrase,
+                    "max_usage": self.psk_max_usage,
+                }
+                psks_data.append(psk)
+                user_names.append(user["name"])
+            try:
+                print(
+                        f"sending request for psk batch "
+                        f"{start} to {stop} "
+                        .ljust(79, "."), end="", flush=True
+                    )
+                LOGGER.debug(
+                        f"create_ppsk_bulk:sending request for psk batch "
+                        f"{start} to {stop}"
+                )
+                if dry_run:
+                    response = {"updated":[],"errors":[]}
+                    for user in psks_data:
+                        response["updated"].append(user["name"])
+                    LOGGER.info("create_ppsk_bulk:dry run mode... I'm not creating the psks")
+                else:
+                    if self.scope == "orgs":
+                        response = mistapi.api.v1.orgs.psks.importOrgPsks(
+                            self.apisession, self.scope_id, psks_data
+                        ).data
+                    else:
+                        response = mistapi.api.v1.sites.psks.importSitePsks(
+                            self.apisession, self.scope_id, psks_data
+                        ).data
+                print("\033[92m\u2714\033[0m")
+                LOGGER.debug(response)
+
+                for user in users:
+                    if user["name"] in user_names:
+                        print(
+                                f"Checking PPSK creation for user {user['name']} "
+                                .ljust(79, "."), end="", flush=True
+                            )
+                        if user["name"] in response["updated"]:
+                            user["psk_added"] = True
+                            print("\033[92m\u2714\033[0m")
+                            LOGGER.info(f"create_ppsk_bulk:psk {user['name']} created")
+                        else:
+                            print("\033[31m\u2716\033[0m")
+                            LOGGER.error(f"create_ppsk_bulk:psk {user['name']} not created")
+                            LOGGER.error("Exception occurred", exc_info=True)
+
+            except:
+                print("\033[31m\u2716\033[0m")
+                LOGGER.critical("Exception occurred", exc_info=True)
+
+        return users

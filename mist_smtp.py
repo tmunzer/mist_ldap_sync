@@ -10,11 +10,15 @@
 Script managing the communication with the SMTP Server
 """
 import smtplib
+import logging
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from datetime import datetime
 from mist_qrcode import get_qrcode_as_html
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
 
 class MistSmtp():
     """
@@ -42,17 +46,22 @@ class MistSmtp():
             self.report_enabled = False
 
     def _send_email(self, receivers, msg, log_message, dry_run:bool=False):
-        print(log_message, end="", flush=True)
+        print(f"{log_message} ".ljust(79, "."), end="", flush=True)
+        LOGGER.info(f"_send_email:{log_message}")
+        LOGGER.debug(self.from_email)
+        LOGGER.debug(receivers)
         try:
             if not dry_run:
                 with self.smtp(self.host, self.port) as smtp:
                     if self.username and self.password:
                         smtp.login(self.username, self.password)
-                    smtp.sendmail(self.from_email, receivers, msg)   
+                    smtp.sendmail(self.from_email, receivers, msg)
             print("\033[92m\u2714\033[0m")
+            LOGGER.info("_send_email:email sent")
             return True
         except:
             print('\033[31m\u2716\033[0m')
+            LOGGER.critical("Exception occurred", exc_info=True)
             return False
 
     def send_psk(self, psk, ssid, user_name, user_email, dry_run:bool=False):
@@ -81,6 +90,7 @@ class MistSmtp():
     def send_report(self, added_psks, removed_psks, dry_run:bool=False):
         if self.report_enabled and not dry_run:
             print("Generating report ".ljust(79, "."), end="", flush=True)
+            LOGGER.info("send_report:generating email report")
             msg = MIMEMultipart()
             msg["Subject"] = "Automated PSK Report"
             msg["From"] = f"{self.from_name} <{self.from_email}>"
@@ -113,10 +123,11 @@ class MistSmtp():
 
             print("\033[92m\u2714\033[0m")
             for receiver in self.report_receivers:
+                del msg["To"]
                 msg["To"] = receiver
                 self._send_email(
                         receiver, msg.as_string(),
-                        f"Sending report email to {receiver} ".ljust(79, ".")
+                        f"Sending report email to {receiver}"
                     )
             return
         elif dry_run:
