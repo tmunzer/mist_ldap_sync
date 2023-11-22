@@ -20,6 +20,7 @@ Usage:
 -r, --resend-emails Resend PSK emails to users. This option disable to PSK
                     creation and deletion (will just generate and send the 
                     emails)
+                    This option DOES NOT work with Mist Emails
 
 -e, --env=file      Configuration file location. By default the script
                     is looking for a ".env" file in the script root folder
@@ -149,6 +150,7 @@ def _load_mist(verbose):
         "ssid": os.environ.get("MIST_SSID", default=None),
         "psk_length": int(os.environ.get("MIST_PSK_LENGTH", default=12)),
         "psk_vlan": os.environ.get("MIST_PSK_VLAN"),
+        "psk_email": eval(os.environ.get("MIST_PSK_EMAIL", False)),
         "psk_max_usage": os.environ.get("MIST_PSK_MAX_USAGE", 0),
         "allowed_chars": os.environ.get("MIST_PSK_ALLOWED_CHARS", default="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"),
         "excluded_psks": os.environ.get("MIST_PSK_EXCLUDED", default="")
@@ -208,6 +210,7 @@ def _load_mist(verbose):
         print(f"ssid          : {mist_config['ssid']}")
         print(f"psk_length    : {mist_config['psk_length']}")
         print(f"psk_vlan      : {mist_config['psk_vlan']}")
+        print(f"psk_email     : {mist_config['psk_email']}")
         print(f"psk_max_usage : {mist_config['psk_max_usage']}")
         print(f"allowed_chars : {mist_config['allowed_chars']}")
         print(f"excluded_psks : {mist_config['excluded_psks']}")
@@ -218,6 +221,7 @@ def _load_mist(verbose):
     LOGGER.info(f"ssid               : {mist_config['ssid']}")
     LOGGER.info(f"psk_length         : {mist_config['psk_length']}")
     LOGGER.info(f"psk_vlan           : {mist_config['psk_vlan']}")
+    LOGGER.info(f"psk_email          : {mist_config['psk_email']}")
     LOGGER.info(f"psk_max_usage      : {mist_config['psk_max_usage']}")
     LOGGER.info(f"allowed_chars      : {mist_config['allowed_chars']}")
     LOGGER.info(f"excluded_psks      : {mist_config['excluded_psks']}")
@@ -325,8 +329,11 @@ class Main():
             self._delete_psk()
             LOGGER.info("sync:create users")
             self._create_psk()
-        LOGGER.info("sync:send users email")
-        self._send_user_email()
+        if not self.mist.psk_email:
+            LOGGER.info("sync:send users email")
+            self._send_user_email()
+        else:
+            LOGGER.info("sync:emil configured to be sent by Mist")
         self._print_part("REPORT")
         LOGGER.info("sync:send report")
         self.smtp.send_report(self.report_add, self.report_delete, self.dry_run)
@@ -461,6 +468,7 @@ Usage:
 -r, --resend-emails Resend PSK emails to users. This option disable to PSK
                     creation and deletion (will just generate and send the 
                     emails)
+                    This option DOES NOT work with Mist Emails
 
 -e, --env=file      Configuration file location. By default the script
                     is looking for a ".env" file in the script root folder

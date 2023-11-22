@@ -28,6 +28,7 @@ class Mist:
         self.ssid = config.get("ssid")
         self.psk_length = config.get("psk_length")
         self.psk_vlan = config.get("psk_vlan")
+        self.psk_email = config.get("psk_email")
         self.psk_max_usage = config.get("psk_max_usage")
         self.allowed_chars = config.get("allowed_chars")
         self.excluded_psks = config.get("excluded_psks")
@@ -160,10 +161,12 @@ class Mist:
                 psk = {
                     "usage": "multi",
                     "name": user["name"],
+                    "email": user.get("email"),
                     "ssid": self.ssid,
                     "vlan_id": self.psk_vlan,
                     "passphrase": passphrase,
                     "max_usage": self.psk_max_usage,
+                    "notify_on_create_or_edit": self.psk_email,
                 }
                 psks_data.append(psk)
                 user_names.append(user["name"])
@@ -201,6 +204,9 @@ class Mist:
                             )
                         if user["name"] in response["updated"]:
                             user["psk_added"] = True
+                            if self.psk_email:
+                                user["email_sent"] = True
+
                             print("\033[92m\u2714\033[0m")
                             LOGGER.info(f"create_ppsk_bulk:psk {user['name']} created")
                         else:
