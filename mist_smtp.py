@@ -84,7 +84,9 @@ class MistSmtp():
             msg_body = MIMEText(html, "html")
             msg.attach(msg_body)
 
-            return self._send_email(user_email, msg.as_string(), "    Sending the email ".ljust(79, "."), dry_run)
+            return self._send_email(
+                user_email, msg.as_string(),
+                f"Sending psk email to {user_name} {user_email}", dry_run)
 
 
     def send_report(self, added_psks, removed_psks, dry_run:bool=False):
