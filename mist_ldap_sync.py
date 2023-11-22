@@ -17,6 +17,9 @@ Usage:
 
 -d, --dry-run       Dry Run. Execute all the tasks, but does not create/delte
                     PPSKs, and does not send any email
+-r, --resend-emails Resend PSK emails to users. This option disable to PSK
+                    creation and deletion (will just generate and send the 
+                    emails)
 
 -e, --env=file      Configuration file location. By default the script
                     is looking for a ".env" file in the script root folder
@@ -292,7 +295,7 @@ def _load_ldap(verbose):
 ##################################################################### FUNCTIONS
 ###############################################################################
 class Main():
-    def __init__(self, ldap_config, mist_config, smtp_config, dry_run):
+    def __init__(self, ldap_config, mist_config, smtp_config, dry_run, resend_emails):
         self._print_part("INIT", False)
         self.ldap = MistLdap(ldap_config)
         self.mist = Mist(mist_config)
@@ -302,6 +305,7 @@ class Main():
         self.ldap_user_list = []
         self.mist_user_list = []
         self.dry_run = dry_run
+        self.resend_emails = resend_emails
 
     def sync(self):
         if self.dry_run:
@@ -310,19 +314,51 @@ class Main():
         else:
             dry_run_string = ""
         self._print_part("LDAP SEARCH")
+        LOGGER.info("sync:getting ldap users")
         self.ldap_user_list = self.ldap.get_users()
+        LOGGER.info("sync:getting mist users")
         self._print_part("MIST REQUEST")
         self.mist_user_list = self.mist.get_users()
-        self._print_part(f" {dry_run_string}DELETE" )
-        self._delete_psk()
-        self._create_psk()
+        if not self.resend_emails:
+            self._print_part(f" {dry_run_string}DELETE" )
+            LOGGER.info("sync:delete users")
+            self._delete_psk()
+            LOGGER.info("sync:create users")
+            self._create_psk()
+        LOGGER.info("sync:send users email")
+        self._send_user_email()
         self._print_part("REPORT")
+        LOGGER.info("sync:send report")
         self.smtp.send_report(self.report_add, self.report_delete, self.dry_run)
 
     def _print_part(self, part, space=True):
         if space:
             print()
         print(part.center(80, "_"))
+
+    def _generate_user_list(self, include_users_with_psk:bool=False):
+        users = []
+        for user in self.ldap_user_list:
+            user_has_psk = True
+            try:
+                next(item for item in self.mist_user_list if item["name"]==user["name"])
+            except:
+                user_has_psk = False
+
+            if not user_has_psk or include_users_with_psk:
+                reported_user = {
+                        "name": user["name"],
+                        "email": user["email"],
+                        "psk_added": False,
+                        "email_sent": False
+                    }
+                data = []
+                if user["name"]:
+                    data.append(f"name : {user['name']}")
+                if user["email"]:
+                    data.append(f"email: {user['email']}")
+                users.append(reported_user)
+        return users
 
     def _delete_psk(self):
         self.report_delete = []
@@ -347,64 +383,68 @@ class Main():
         if not self.report_delete:
             print("No PSK to delete!")
 
-
     def _create_psk(self):
         if self.dry_run:
             dry_run_string = "DRY RUN - "
         else:
             dry_run_string = ""
         self.report_add = []
-        users_to_create = []
         print()
         print(f" {dry_run_string}PSKs TO CREATE ".center(80, "-"))
-        for user in self.ldap_user_list:
-            try:
-                next(item["name"] for item in self.mist_user_list if item["name"]==user["name"])
-            except:
-                reported_user = {
-                        "name": user["name"],
-                        "email": user["email"],
-                        "psk_added": False,
-                        "email_sent": False
-                    }
-                data = []
-                if user["name"]:
-                    data.append(f"name : {user['name']}")
-                if user["email"]:
-                    data.append(f"email: {user['email']}")
-                print(f"{' / '.join(data)}")
-                users_to_create.append(reported_user)
         print()
-        if not users_to_create:
+        self.report_add = self._generate_user_list()
+
+        if not self.report_add:
             print("No PSK to create!")
+
         else:
-            print(f"{len(users_to_create)} psks will be created")
-            self.report_add = self.mist.create_ppsk_bulk(users_to_create, self.dry_run)
-                    # if psk:
-                    #     report["psk_added"] = True
-                    #     if user["email"]:
-                    #         res = self.smtp.send_psk(
-                    #                 psk["passphrase"],
-                    #                 psk["ssid"],
-                    #                 user["name"],
-                    #                 user["email"],
-                    #                 self.dry_run
-                    #             )
-                    #         report["email_sent"] = res
-                    # self.report_add.append(report)
+            print(f"{len(self.report_add)} psks will be created")
+            self.report_add = self.mist.create_ppsk_bulk(self.report_add, self.dry_run)
+
         if not self.report_add:
             print("No PSK created!")
+
+
+    def _send_user_email(self):
+        psk_list = self.mist.get_ppks()
+        if not self.report_add:
+            LOGGER.debug(f"_send_user_email:generating user list")
+            print()
+            print(f" PSKs TO EMAIL ".center(80, "-"))
+            print()
+            self.report_add = self._generate_user_list(True)
+        else:
+            LOGGER.debug(f"_send_user_email:got user list from self.report")
+
+        for user in self.report_add:
+            if user.get("psk_added") or self.resend_emails:
+                if not user.get("email"):
+                    LOGGER.warning(f"_create_psk:no email for {user['name']}. Will not send psk by email")
+                else:
+                    try:
+                        psk = next(item for item in psk_list if item["name"]==user["name"])
+                        res = self.smtp.send_psk(
+                                psk["passphrase"],
+                                psk["ssid"],
+                                user["name"],
+                                user["email"],
+                                self.dry_run
+                            )
+                        user["email_sent"] = res
+                    except:
+                        LOGGER.warning(f"_create_psk:PSK for {user['name']} not found")
+    
 
 def _check_only():
         _load_ldap(True)
         _load_mist(True)
         _load_smtp(True)
 
-def _run(check, dry_run):
+def _run(check, dry_run, resend_emails):
         ldap_config = _load_ldap(check)
         mist_config= _load_mist(check)
         smtp_config =_load_smtp(check)
-        main = Main(ldap_config, mist_config, smtp_config, dry_run)
+        main = Main(ldap_config, mist_config, smtp_config, dry_run, resend_emails)
         main.sync()
 
 def usage():
@@ -418,6 +458,9 @@ Usage:
 
 -d, --dry-run       Dry Run. Execute all the tasks, but does not create/delte
                     PPSKs, and does not send any email
+-r, --resend-emails Resend PSK emails to users. This option disable to PSK
+                    creation and deletion (will just generate and send the 
+                    emails)
 
 -e, --env=file      Configuration file location. By default the script
                     is looking for a ".env" file in the script root folder
@@ -480,8 +523,8 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     try:
         opts, args = getopt.getopt(
                 sys.argv[1:],
-                "ce:ahdl:", 
-                ["check", "env=", "all", "help", "dry-run", "log-file="]
+                "ce:ahdl:r", 
+                ["check", "env=", "all", "help", "dry-run", "log-file=", "resend-emails"]
             )
     except getopt.GetoptError as err:
         print(err)
@@ -492,6 +535,7 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     CHECK_ONLY = False
     ENV_FILE = None
     DRY_RUN=False
+    RESEND_EMAILS=False
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -504,6 +548,8 @@ Github: https://github.com/tmunzer/mist_ldap_sync
             ENV_FILE = a
         elif o in ["-d", "--dry-run"]:
             DRY_RUN = True
+        elif o in ["-r", "--resend-emails"]:
+            RESEND_EMAILS = True
         elif o in ["-l", "--log-file"]:
             LOG_FILE = a
         else:
@@ -520,4 +566,4 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     if CHECK_ONLY:
         _check_only()
     else:
-        _run(CHECK, DRY_RUN)
+        _run(CHECK, DRY_RUN, RESEND_EMAILS)
