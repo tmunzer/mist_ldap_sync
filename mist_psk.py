@@ -42,7 +42,7 @@ class Mist:
         )
         return result_str
 
-    def get_users(self, mist_user_list=[]):
+    def get_users(self, mist_user_list:list=[]):
         print(f"Requesting the list of PSKs ".ljust(79, "."), end="", flush=True)
         LOGGER.info(f"Requesting the list of PSKs")
         try:
@@ -60,11 +60,11 @@ class Mist:
     def get_ppks(self):
         if self.scope == "orgs":
             response = mistapi.api.v1.orgs.psks.listOrgPsks(
-                self.apisession, self.scope_id, limit=1000
+                self.apisession, self.scope_id, ssid=self.ssid, limit=1000
             )
         else:
             response = mistapi.api.v1.sites.psks.listSitePsks(
-                self.apisession, self.scope_id, limit=1000
+                self.apisession, self.scope_id, ssid=self.ssid,limit=1000
             )
         data = mistapi.get_all(self.apisession, response)
         return data
@@ -91,6 +91,7 @@ class Mist:
         psk_data = {
             "usage": "multi",
             "name": user["name"],
+            "email": user.get("email"),
             "ssid": self.ssid,
             "vlan_id": self.psk_vlan,
             "passphrase": psk,
@@ -111,6 +112,7 @@ class Mist:
                     response = mistapi.api.v1.sites.psks.createSitePsk(
                         self.apisession, self.scope_id, psk_data
                     ).data
+
             LOGGER.debug(response)
             if (
                 response.get("id")
@@ -177,8 +179,6 @@ class Mist:
                 )
                 if dry_run:
                     response = {"updated":[],"errors":[]}
-                    for user in psks_data:
-                        response["updated"].append(user["name"])
                     LOGGER.info("create_ppsk_bulk:dry run mode... I'm not creating the psks")
                 else:
                     if self.scope == "orgs":
@@ -191,7 +191,8 @@ class Mist:
                         ).data
                 print("\033[92m\u2714\033[0m")
                 LOGGER.debug(response)
-
+                for error in response.get("errors", []):
+                    LOGGER.error(f"create_ppsk_bulk:{error}")
                 for user in users:
                     if user["name"] in user_names:
                         print(
