@@ -63,7 +63,14 @@ class MistLdap:
             f"Contacting LDAP server on {self.host}:{self.port} (SSL: {self.use_ssl})"
         )
         try:
-            conn = Connection(self.server, self.bind_user, self.bind_password, auto_bind=True, read_only=True, auto_range=True)
+            conn = Connection(
+                self.server,
+                self.bind_user,
+                self.bind_password,
+                auto_bind=True,
+                read_only=True,
+                auto_range=True,
+            )
             print("\033[92m\u2714\033[0m")
             LOGGER.info("Connected")
             return conn
@@ -80,23 +87,24 @@ class MistLdap:
         try:
             if self.recursive_search:
                 entry_generator = conn.extend.standard.paged_search(
-                search_base = self.base_dn,
-                search_filter = f"(&(objectclass=person)(memberOf:1.2.840.113556.1.4.1941:={self.search_group}))",
-                attributes=[self.user_name, self.user_email, "objectClass"],
-                paged_size = 1000
+                    search_base=self.base_dn,
+                    search_filter=f"(&(objectclass=person)(memberOf:1.2.840.113556.1.4.1941:={self.search_group}))",
+                    attributes=[self.user_name, self.user_email, "objectClass"],
+                    paged_size=1000,
                 )
             else:
                 entry_generator = conn.extend.standard.paged_search(
-                search_base = self.base_dn,
-                search_filter = f"(&(objectclass=person)(memberOf={self.search_group}))",
-                attributes=[self.user_name, self.user_email, "objectClass"],
-                paged_size = 1000
+                    search_base=self.base_dn,
+                    search_filter=f"(&(objectclass=person)(memberOf={self.search_group}))",
+                    attributes=[self.user_name, self.user_email, "objectClass"],
+                    paged_size=1000,
                 )
-
 
             for entry in entry_generator:
                 if "attributes" in entry:
-                    entries.append({'dn':entry['dn'], 'attributes': entry['attributes']})
+                    entries.append(
+                        {"dn": entry["dn"], "attributes": entry["attributes"]}
+                    )
             print("\033[92m\u2714\033[0m")
             LOGGER.info(f"Done: {len(entries)} entries")
             return entries
@@ -105,7 +113,7 @@ class MistLdap:
             LOGGER.critical("Exception occurred", exc_info=True)
             sys.exit(1)
 
-    def _process(self, entries: list, ad_user_list:list):
+    def _process(self, entries: list, ad_user_list: list):
         if not ad_user_list:
             ad_user_list = []
         print("Processing LDAP accounts ".ljust(79, "."), end="", flush=True)
@@ -113,14 +121,12 @@ class MistLdap:
             for entry in entries:
                 LOGGER.debug(f"_process:{entry}")
                 if (
-                    not "computer" in entry['attributes'].get("objectClass")
-                    and self.user_name in entry['attributes']
+                    not "computer" in entry["attributes"].get("objectClass")
+                    and self.user_name in entry["attributes"]
                 ):
-                    user = {
-                        "name" : str(entry['attributes'][self.user_name])
-                    }
-                    if self.user_email in entry['attributes']:
-                        user["email"] = str(entry['attributes'][self.user_email])
+                    user = {"name": str(entry["attributes"][self.user_name])}
+                    if self.user_email in entry["attributes"]:
+                        user["email"] = str(entry["attributes"][self.user_email])
                     else:
                         user["email"] = ""
                     LOGGER.debug(f"_process:user from LDAP: {user}")
