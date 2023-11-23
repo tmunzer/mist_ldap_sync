@@ -17,12 +17,15 @@ Usage:
 
 -d, --dry-run       Dry Run. Execute all the tasks, but does not create/delte
                     PPSKs, and does not send any email
+
 -r, --resend-emails Resend PSK emails to users. This option disable to PSK
                     creation and deletion (will just generate and send the 
                     emails)
                     This option DOES NOT work with Mist Emails
+-f, --file=         if -r/--resend-emails, location of a CSV file with the list
+                    of users to whom the email should be resend
 
--e, --env=file      Configuration file location. By default the script
+-e, --env=          Configuration file location. By default the script
                     is looking for a ".env" file in the script root folder
 
 -a, --all           Check the configuration file (-c) and run the script
@@ -72,6 +75,7 @@ import os
 import sys
 import logging
 import getopt
+import csv
 from dotenv import load_dotenv
 from mist_smtp import MistSmtp
 from mist_ldap import MistLdap
@@ -299,7 +303,7 @@ def _load_ldap(verbose):
 ##################################################################### FUNCTIONS
 ###############################################################################
 class Main():
-    def __init__(self, ldap_config, mist_config, smtp_config, dry_run, resend_emails):
+    def __init__(self, ldap_config, mist_config, smtp_config, dry_run, resend_emails, user_emails):
         self._print_part("INIT", False)
         self.ldap = MistLdap(ldap_config)
         self.mist = Mist(mist_config)
@@ -310,6 +314,7 @@ class Main():
         self.mist_user_list = []
         self.dry_run = dry_run
         self.resend_emails = resend_emails
+        self.user_emails = user_emails
 
     def sync(self):
         if self.dry_run:
@@ -424,10 +429,14 @@ class Main():
             LOGGER.debug(f"_send_user_email:got user list from self.report")
 
         for user in self.report_add:
-            if user.get("psk_added") or self.resend_emails:
-                if not user.get("email"):
-                    LOGGER.warning(f"_create_psk:no email for {user['name']}. Will not send psk by email")
-                else:
+            if not user.get("email"):
+                LOGGER.warning(f"_create_psk:no email for {user['name']}. Will not send psk by email")
+            else:
+                if (
+                    (self.resend_emails and user.get("email") in self.user_emails) or
+                    (self.resend_emails and not self.user_emails) or
+                    user.get("psk_added")
+                ):
                     try:
                         psk = next(item for item in psk_list if item["name"]==user["name"])
                         res = self.smtp.send_psk(
@@ -440,19 +449,34 @@ class Main():
                         user["email_sent"] = res
                     except:
                         LOGGER.warning(f"_create_psk:PSK for {user['name']} not found")
-    
+
 
 def _check_only():
         _load_ldap(True)
         _load_mist(True)
         _load_smtp(True)
 
-def _run(check, dry_run, resend_emails):
+def _run(check, dry_run, resend_emails, user_emails):
         ldap_config = _load_ldap(check)
         mist_config= _load_mist(check)
         smtp_config =_load_smtp(check)
-        main = Main(ldap_config, mist_config, smtp_config, dry_run, resend_emails)
+        main = Main(ldap_config, mist_config, smtp_config, dry_run, resend_emails, user_emails)
         main.sync()
+
+def _read_csv_file(file_path: str):
+    LOGGER.info(f"_read_csv_file:CSV file provided. Loading {file_path}")
+    try:
+        print(f"Loading file {file_path} ".ljust(80, "."), end="", flush=True)
+        users = []
+        with open(file_path, "r") as f:
+            data = csv.reader(f, skipinitialspace=True, quotechar='"')
+            for line in data:
+                users.append(line[0].strip())                
+        print("\033[92m\u2714\033[0m")
+        return users
+    except:
+        print('\033[31m\u2716\033[0m')
+        LOGGER.error("Exception occurred", exc_info=True)
 
 def usage():
     print("""
@@ -465,12 +489,15 @@ Usage:
 
 -d, --dry-run       Dry Run. Execute all the tasks, but does not create/delte
                     PPSKs, and does not send any email
+
 -r, --resend-emails Resend PSK emails to users. This option disable to PSK
                     creation and deletion (will just generate and send the 
                     emails)
                     This option DOES NOT work with Mist Emails
+-f, --file=         if -r/--resend-emails, location of a CSV file with the list
+                    of users to whom the email should be resend
 
--e, --env=file      Configuration file location. By default the script
+-e, --env=          Configuration file location. By default the script
                     is looking for a ".env" file in the script root folder
 
 -a, --all           Check the configuration file (-c) and run the script
@@ -479,6 +506,7 @@ Usage:
 
 ---
 Configuration file example:
+
 LDAP_HOST="dc.myserver.com"
 LDAP_PORT=389
 LDAP_USE_SSL=False
@@ -531,8 +559,8 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     try:
         opts, args = getopt.getopt(
                 sys.argv[1:],
-                "ce:ahdl:r", 
-                ["check", "env=", "all", "help", "dry-run", "log-file=", "resend-emails"]
+                "ce:ahdl:rf:", 
+                ["check", "env=", "all", "help", "dry-run", "log-file=", "resend-emails" "file="]
             )
     except getopt.GetoptError as err:
         print(err)
@@ -544,6 +572,8 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     ENV_FILE = None
     DRY_RUN=False
     RESEND_EMAILS=False
+    CSV_USERS_FILE=None
+    CSV_USERS = []
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -558,6 +588,8 @@ Github: https://github.com/tmunzer/mist_ldap_sync
             DRY_RUN = True
         elif o in ["-r", "--resend-emails"]:
             RESEND_EMAILS = True
+        elif o in ["-f", "--file"]:
+            CSV_USERS_FILE = a
         elif o in ["-l", "--log-file"]:
             LOG_FILE = a
         else:
@@ -571,7 +603,9 @@ Github: https://github.com/tmunzer/mist_ldap_sync
 
     logging.basicConfig(filename=LOG_FILE, filemode='w')
     LOGGER.setLevel(logging.DEBUG)
+    if CSV_USERS_FILE:
+        CSV_USERS = _read_csv_file(CSV_USERS_FILE)
     if CHECK_ONLY:
         _check_only()
     else:
-        _run(CHECK, DRY_RUN, RESEND_EMAILS)
+        _run(CHECK, DRY_RUN, RESEND_EMAILS, CSV_USERS)
