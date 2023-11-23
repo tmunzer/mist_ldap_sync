@@ -23,7 +23,7 @@ Usage:
                     emails)
                     This option DOES NOT work with Mist Emails
 -f, --file=         if -r/--resend-emails, location of a CSV file with the list
-                    of users to whom the email should be resend
+                    of emails to whom the psk should be resend
 
 -e, --env=          Configuration file location. By default the script
                     is looking for a ".env" file in the script root folder
@@ -303,7 +303,7 @@ def _load_ldap(verbose):
 ##################################################################### FUNCTIONS
 ###############################################################################
 class Main():
-    def __init__(self, ldap_config, mist_config, smtp_config, dry_run, resend_emails, user_emails):
+    def __init__(self, ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter):
         self._print_part("INIT", False)
         self.ldap = MistLdap(ldap_config)
         self.mist = Mist(mist_config)
@@ -314,7 +314,7 @@ class Main():
         self.mist_user_list = []
         self.dry_run = dry_run
         self.resend_emails = resend_emails
-        self.user_emails = user_emails
+        self.resend_emails_filter = resend_emails_filter
 
     def sync(self):
         if self.dry_run:
@@ -433,8 +433,8 @@ class Main():
                 LOGGER.warning(f"_create_psk:no email for {user['name']}. Will not send psk by email")
             else:
                 if (
-                    (self.resend_emails and user.get("email") in self.user_emails) or
-                    (self.resend_emails and not self.user_emails) or
+                    (self.resend_emails and user.get("email") in self.resend_emails_filter) or
+                    (self.resend_emails and not self.resend_emails_filter) or
                     user.get("psk_added")
                 ):
                     try:
@@ -456,11 +456,11 @@ def _check_only():
         _load_mist(True)
         _load_smtp(True)
 
-def _run(check, dry_run, resend_emails, user_emails):
+def _run(check, dry_run, resend_emails, resend_emails_filter):
         ldap_config = _load_ldap(check)
         mist_config= _load_mist(check)
         smtp_config =_load_smtp(check)
-        main = Main(ldap_config, mist_config, smtp_config, dry_run, resend_emails, user_emails)
+        main = Main(ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter)
         main.sync()
 
 def _read_csv_file(file_path: str):
@@ -495,7 +495,7 @@ Usage:
                     emails)
                     This option DOES NOT work with Mist Emails
 -f, --file=         if -r/--resend-emails, location of a CSV file with the list
-                    of users to whom the email should be resend
+                    of emails to whom the psk should be resend
 
 -e, --env=          Configuration file location. By default the script
                     is looking for a ".env" file in the script root folder
@@ -560,7 +560,7 @@ Github: https://github.com/tmunzer/mist_ldap_sync
         opts, args = getopt.getopt(
                 sys.argv[1:],
                 "ce:ahdl:rf:", 
-                ["check", "env=", "all", "help", "dry-run", "log-file=", "resend-emails" "file="]
+                ["check", "env=", "all", "help", "dry-run", "log-file=", "resend-emails", "file="]
             )
     except getopt.GetoptError as err:
         print(err)
@@ -572,8 +572,8 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     ENV_FILE = None
     DRY_RUN=False
     RESEND_EMAILS=False
-    CSV_USERS_FILE=None
-    CSV_USERS = []
+    RESEND_EMAILS_FILTER_FILE=None
+    RESEND_EMAILS_FILTER = []
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
@@ -589,7 +589,7 @@ Github: https://github.com/tmunzer/mist_ldap_sync
         elif o in ["-r", "--resend-emails"]:
             RESEND_EMAILS = True
         elif o in ["-f", "--file"]:
-            CSV_USERS_FILE = a
+            RESEND_EMAILS_FILTER_FILE = a
         elif o in ["-l", "--log-file"]:
             LOG_FILE = a
         else:
@@ -603,9 +603,9 @@ Github: https://github.com/tmunzer/mist_ldap_sync
 
     logging.basicConfig(filename=LOG_FILE, filemode='w')
     LOGGER.setLevel(logging.DEBUG)
-    if CSV_USERS_FILE:
-        CSV_USERS = _read_csv_file(CSV_USERS_FILE)
+    if RESEND_EMAILS_FILTER_FILE:
+        RESEND_EMAILS_FILTER = _read_csv_file(RESEND_EMAILS_FILTER_FILE)
     if CHECK_ONLY:
         _check_only()
     else:
-        _run(CHECK, DRY_RUN, RESEND_EMAILS, CSV_USERS)
+        _run(CHECK, DRY_RUN, RESEND_EMAILS, RESEND_EMAILS_FILTER)
