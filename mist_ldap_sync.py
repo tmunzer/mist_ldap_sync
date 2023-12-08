@@ -154,7 +154,7 @@ def _load_mist(verbose):
         "ssid": os.environ.get("MIST_SSID", default=None),
         "psk_length": int(os.environ.get("MIST_PSK_LENGTH", default=12)),
         "psk_vlan": os.environ.get("MIST_PSK_VLAN"),
-        "psk_email": eval(os.environ.get("MIST_PSK_EMAIL", False)),
+        "psk_email": eval(os.environ.get("MIST_PSK_EMAIL", default="False")),
         "psk_max_usage": os.environ.get("MIST_PSK_MAX_USAGE", 0),
         "allowed_chars": os.environ.get("MIST_PSK_ALLOWED_CHARS", default="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"),
         "excluded_psks": os.environ.get("MIST_PSK_EXCLUDED", default="")
