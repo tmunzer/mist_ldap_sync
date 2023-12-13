@@ -25,6 +25,9 @@ Usage:
 -f, --file=         if -r/--resend-emails, location of a CSV file with the list
                     of emails to whom the psk should be resend
 
+-t, --template=     path to the email template to use to generate the email.
+                    default is "./psk_template.html" (provided with the script)
+
 -e, --env=          Configuration file location. By default the script
                     is looking for a ".env" file in the script root folder
 
@@ -497,6 +500,9 @@ Usage:
 -f, --file=         if -r/--resend-emails, location of a CSV file with the list
                     of emails to whom the psk should be resend
 
+-t, --template=     path to the email template to use to generate the email.
+                    default is "./psk_template.html" (provided with the script)
+
 -e, --env=          Configuration file location. By default the script
                     is looking for a ".env" file in the script root folder
 
@@ -558,7 +564,7 @@ Github: https://github.com/tmunzer/mist_ldap_sync
         opts, args = getopt.getopt(
                 sys.argv[1:],
                 "ce:ahdl:rf:t:", 
-                ["check", "env=", "all", "help", "dry-run", "log-file=", "resend-emails", "file=", "template"]
+                ["check", "env=", "all", "help", "dry-run", "log-file=", "resend-emails", "file=", "template="]
             )
     except getopt.GetoptError as err:
         print(err)
@@ -572,6 +578,7 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     RESEND_EMAILS=False
     RESEND_EMAILS_FILTER_FILE=None
     RESEND_EMAILS_FILTER = []
+    TEMPLATE = "psk_template.html"
     for o, a in opts:
         if o in ["-h", "--help"]:
             usage()
