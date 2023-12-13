@@ -81,7 +81,6 @@ from mist_smtp import MistSmtp
 from mist_ldap import MistLdap
 from mist_psk import Mist
 
-
 LOGGER = logging.getLogger(__name__)
 LOG_FILE = "./mist_ldap_sync.log"
 ###############################################################################
@@ -105,6 +104,7 @@ def _load_smtp(verbose):
         "enable_qrcode": eval(os.environ.get("SMTP_ENABLE_QRCODE", default="True")),
         "report_enabled": eval(os.environ.get("SMTP_REPORT_ENABLED", default="False")),
         "report_receivers": os.environ.get("SMTP_REPORT_RECEIVERS", default=None).split(","),
+        "template": TEMPLATE
     }    
 
     print("\033[92m\u2714\033[0m")
@@ -125,6 +125,7 @@ def _load_smtp(verbose):
         print(f"enable_qrcode      : {smtp_config['enable_qrcode']}")
         print(f"report_enabled     : {smtp_config['report_enabled']}")
         print(f"report_receivers   : {smtp_config['report_receivers']}")
+        print(f"template           : {smtp_config['template']}")
         print("")
     LOGGER.info(f"enabled            : {smtp_config['enabled']}")
     LOGGER.info(f"host               : {smtp_config['host']}")
@@ -138,6 +139,7 @@ def _load_smtp(verbose):
     LOGGER.info(f"enable_qrcode      : {smtp_config['enable_qrcode']}")
     LOGGER.info(f"report_enabled     : {smtp_config['report_enabled']}")
     LOGGER.info(f"report_receivers   : {smtp_config['report_receivers']}")
+    LOGGER.info(f"template           : {smtp_config['template']}")
 
     return smtp_config
 
@@ -157,7 +159,7 @@ def _load_mist(verbose):
         "psk_email": eval(os.environ.get("MIST_PSK_EMAIL", default="False")),
         "psk_max_usage": os.environ.get("MIST_PSK_MAX_USAGE", 0),
         "allowed_chars": os.environ.get("MIST_PSK_ALLOWED_CHARS", default="abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"),
-        "excluded_psks": os.environ.get("MIST_PSK_EXCLUDED", default="")
+        "excluded_psks": os.environ.get("MIST_PSK_EXCLUDED", default=""),
     }
 
     if not mist_config["host"]:
@@ -297,13 +299,12 @@ def _load_ldap(verbose):
 
     return ldap_config
 
-
 ###############################################################################
 ###############################################################################
 ##################################################################### FUNCTIONS
 ###############################################################################
 class Main():
-    def __init__(self, ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter):
+    def __init__(self, ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter,template):
         self._print_part("INIT", False)
         self.ldap = MistLdap(ldap_config)
         self.mist = Mist(mist_config)
@@ -315,6 +316,7 @@ class Main():
         self.dry_run = dry_run
         self.resend_emails = resend_emails
         self.resend_emails_filter = resend_emails_filter
+        self.template = template
 
     def sync(self):
         if self.dry_run:
@@ -353,22 +355,22 @@ class Main():
         for user in self.ldap_user_list:
             user_has_psk = True
             try:
-                next(item for item in self.mist_user_list if item["name"]==user["name"])
+                next(item for item in self.mist_user_list if item["name"].lower()==user["name"].lower())
             except:
                 user_has_psk = False
 
             if not user_has_psk or include_users_with_psk:
                 reported_user = {
-                        "name": user["name"],
-                        "email": user["email"],
+                        "name": user["name"].lower(),
+                        "email": user["email"].lower(),
                         "psk_added": False,
                         "email_sent": False
                     }
                 data = []
                 if user["name"]:
-                    data.append(f"name : {user['name']}")
+                    data.append(f"name : {user['name'].lower()}")
                 if user["email"]:
-                    data.append(f"email: {user['email']}")
+                    data.append(f"email: {user['email'].lower()}")
                 users.append(reported_user)
         return users
 
@@ -416,7 +418,6 @@ class Main():
         if not self.report_add:
             print("No PSK created!")
 
-
     def _send_user_email(self):
         psk_list = self.mist.get_ppks()
         if not self.report_add:
@@ -438,7 +439,7 @@ class Main():
                     user.get("psk_added")
                 ):
                     try:
-                        psk = next(item for item in psk_list if item["name"]==user["name"])
+                        psk = next(item for item in psk_list if item["name"].lower()==user["name"].lower())
                         res = self.smtp.send_psk(
                                 psk["passphrase"],
                                 psk["ssid"],
@@ -450,17 +451,16 @@ class Main():
                     except:
                         LOGGER.warning(f"_create_psk:PSK for {user['name']} not found")
 
-
 def _check_only():
         _load_ldap(True)
         _load_mist(True)
         _load_smtp(True)
 
-def _run(check, dry_run, resend_emails, resend_emails_filter):
+def _run(check, dry_run, resend_emails, resend_emails_filter, template):
         ldap_config = _load_ldap(check)
         mist_config= _load_mist(check)
         smtp_config =_load_smtp(check)
-        main = Main(ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter)
+        main = Main(ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter, template)
         main.sync()
 
 def _read_csv_file(file_path: str):
@@ -471,7 +471,7 @@ def _read_csv_file(file_path: str):
         with open(file_path, "r") as f:
             data = csv.reader(f, skipinitialspace=True, quotechar='"')
             for line in data:
-                users.append(line[0].strip())                
+                users.append(line[0].strip().lower())                
         print("\033[92m\u2714\033[0m")
         return users
     except:
@@ -550,17 +550,15 @@ SMTP_REPORT_RECEIVERS="user.1@myserver.com,user.2@myserver.com"
 #######################################################################################################################################
 if __name__=="__main__":
     print("""
-
 Python Script to Syncronize LDAP users and Mist PSK.
 Written by Thomas Munzer (tmunzer@juniper.net)
 Github: https://github.com/tmunzer/mist_ldap_sync
-
 """)
     try:
         opts, args = getopt.getopt(
                 sys.argv[1:],
-                "ce:ahdl:rf:", 
-                ["check", "env=", "all", "help", "dry-run", "log-file=", "resend-emails", "file="]
+                "ce:ahdl:rf:t:", 
+                ["check", "env=", "all", "help", "dry-run", "log-file=", "resend-emails", "file=", "template"]
             )
     except getopt.GetoptError as err:
         print(err)
@@ -592,6 +590,8 @@ Github: https://github.com/tmunzer/mist_ldap_sync
             RESEND_EMAILS_FILTER_FILE = a
         elif o in ["-l", "--log-file"]:
             LOG_FILE = a
+        elif o in ["-t", "--template"]:
+            TEMPLATE = a
         else:
             assert False, "unhandled option"
 
@@ -600,7 +600,6 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     else:
         load_dotenv()
 
-
     logging.basicConfig(filename=LOG_FILE, filemode='w')
     LOGGER.setLevel(logging.DEBUG)
     if RESEND_EMAILS_FILTER_FILE:
@@ -608,4 +607,4 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     if CHECK_ONLY:
         _check_only()
     else:
-        _run(CHECK, DRY_RUN, RESEND_EMAILS, RESEND_EMAILS_FILTER)
+        _run(CHECK, DRY_RUN, RESEND_EMAILS, RESEND_EMAILS_FILTER, TEMPLATE)

@@ -17,6 +17,16 @@ from email.mime.image import MIMEImage
 from datetime import datetime
 from mist_qrcode import get_qrcode_as_html
 
+import sys
+
+# Check if the correct number of arguments is provided
+#if len(sys.argv) != 2:
+ #   print("Usage: python script.py <template_file>")
+  #  sys.exit(1)
+
+# Get the template file name from the command-line argument
+#template_file = sys.argv[1]
+
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 
@@ -38,6 +48,7 @@ class MistSmtp():
             self.enable_qrcode = config["enable_qrcode"]
             self.report_enabled = config["report_enabled"]
             self.report_receivers = config["report_receivers"]
+            self.template = config["template"]
             if self.use_ssl:
                 self.smtp = smtplib.SMTP_SSL
             else: self.smtp = smtplib.SMTP
@@ -78,7 +89,8 @@ class MistSmtp():
                 qr_info = ""
                 qr_html = ""
 
-            with open("psk_template.html", "r") as template:
+            # Use the variable in the open function
+            with open(self.template, "r") as template:
                 html = template.read()
             html = html.format(self.logo_url, user_name, ssid, psk, qr_info, qr_html)
             msg_body = MIMEText(html, "html")
