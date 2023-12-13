@@ -17,16 +17,6 @@ from email.mime.image import MIMEImage
 from datetime import datetime
 from mist_qrcode import get_qrcode_as_html
 
-import sys
-
-# Check if the correct number of arguments is provided
-#if len(sys.argv) != 2:
- #   print("Usage: python script.py <template_file>")
-  #  sys.exit(1)
-
-# Get the template file name from the command-line argument
-#template_file = sys.argv[1]
-
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 

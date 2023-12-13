@@ -108,7 +108,13 @@ def _load_smtp(verbose, template:str):
         "report_enabled": eval(os.environ.get("SMTP_REPORT_ENABLED", default="False")),
         "report_receivers": os.environ.get("SMTP_REPORT_RECEIVERS", default=None).split(","),
         "template": template
-    }    
+    }
+
+    if smtp_config["enabled"] and not os.path.isfile(smtp_config["template"]):
+        print('\033[31m\u2716\033[0m')
+        print(f"ERROR: SMTP Template {smtp_config['template']} does not exist... Exiting...")
+        LOGGER.critical(f"SMTP Template {smtp_config['template']} does not exist... Exiting...")
+        sys.exit(1)
 
     print("\033[92m\u2714\033[0m")
 
