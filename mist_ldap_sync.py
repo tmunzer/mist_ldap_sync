@@ -91,7 +91,7 @@ LOG_FILE = "./mist_ldap_sync.log"
 ##################################################################CONFIG LOADER
 ###############################################################################
 #### SMTP CONFIG
-def _load_smtp(verbose):
+def _load_smtp(verbose, template:str):
     print("Loading SMTP settings ".ljust(79, "."), end="", flush=True)
     smtp_config = {
         "enabled": eval(os.environ.get("SMTP_ENABLED", default="False")),
@@ -107,7 +107,7 @@ def _load_smtp(verbose):
         "enable_qrcode": eval(os.environ.get("SMTP_ENABLE_QRCODE", default="True")),
         "report_enabled": eval(os.environ.get("SMTP_REPORT_ENABLED", default="False")),
         "report_receivers": os.environ.get("SMTP_REPORT_RECEIVERS", default=None).split(","),
-        "template": TEMPLATE
+        "template": template
     }    
 
     print("\033[92m\u2714\033[0m")
@@ -307,7 +307,7 @@ def _load_ldap(verbose):
 ##################################################################### FUNCTIONS
 ###############################################################################
 class Main():
-    def __init__(self, ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter,template):
+    def __init__(self, ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter):
         self._print_part("INIT", False)
         self.ldap = MistLdap(ldap_config)
         self.mist = Mist(mist_config)
@@ -319,7 +319,6 @@ class Main():
         self.dry_run = dry_run
         self.resend_emails = resend_emails
         self.resend_emails_filter = resend_emails_filter
-        self.template = template
 
     def sync(self):
         if self.dry_run:
@@ -381,11 +380,11 @@ class Main():
         self.report_delete = []
         for psk in self.mist_user_list:
             try:
-                next(item["name"] for item in self.ldap_user_list if item["name"]==psk["name"])
+                next(item["name"] for item in self.ldap_user_list if item["name"].lower()==psk["name"].lower())
             except:
                 if not psk["name"] in self.mist.excluded_psks:
                     print(
-                            f"User {psk['name']} not found... Removing the psk "
+                            f"User {psk['name'].lower()} not found... Removing the psk "
                             .ljust(79, "."), end="", flush=True
                         )
                     report = {"psk": psk["name"], "psk_deleted": False}
@@ -454,16 +453,16 @@ class Main():
                     except:
                         LOGGER.warning(f"_create_psk:PSK for {user['name']} not found")
 
-def _check_only():
+def _check_only(template:str):
         _load_ldap(True)
         _load_mist(True)
-        _load_smtp(True)
+        _load_smtp(True, template)
 
 def _run(check, dry_run, resend_emails, resend_emails_filter, template):
         ldap_config = _load_ldap(check)
         mist_config= _load_mist(check)
-        smtp_config =_load_smtp(check)
-        main = Main(ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter, template)
+        smtp_config =_load_smtp(check, template)
+        main = Main(ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter)
         main.sync()
 
 def _read_csv_file(file_path: str):
@@ -612,6 +611,6 @@ Github: https://github.com/tmunzer/mist_ldap_sync
     if RESEND_EMAILS_FILTER_FILE:
         RESEND_EMAILS_FILTER = _read_csv_file(RESEND_EMAILS_FILTER_FILE)
     if CHECK_ONLY:
-        _check_only()
+        _check_only(TEMPLATE)
     else:
         _run(CHECK, DRY_RUN, RESEND_EMAILS, RESEND_EMAILS_FILTER, TEMPLATE)
