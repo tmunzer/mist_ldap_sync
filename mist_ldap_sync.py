@@ -339,7 +339,7 @@ class Main():
         self._print_part("MIST REQUEST")
         self.mist_user_list = self.mist.get_users()
         if not self.resend_emails:
-            self._print_part(f" {dry_run_string}DELETE" )
+            self._print_part(f" {dry_run_string}DELETE " )
             LOGGER.info("sync:delete users")
             self._delete_psk()
             LOGGER.info("sync:create users")
@@ -386,22 +386,27 @@ class Main():
         self.report_delete = []
         for psk in self.mist_user_list:
             try:
-                next(item["name"] for item in self.ldap_user_list if item["name"].lower()==psk["name"].lower())
+                user_in_ldap=list(item for item in self.ldap_user_list if item["name"].lower()==psk["name"].lower())
+                if user_in_ldap:
+                    LOGGER.debug(f"_delete_psk:user {psk['name']} found in ldap: {user_in_ldap}")
+                else:
+                    if not psk["name"] in self.mist.excluded_psks:
+                        LOGGER.info(f"_delete_psk:user {psk['name']} not found in LDAP. trying to delete psk id {psk['id']}")
+                        print(
+                                f"User {psk['name'].lower()} not found... Removing the psk "
+                                .ljust(79, "."), end="", flush=True
+                            )
+                        report = {"psk": psk["name"], "psk_deleted": False}
+                        try:
+                            self.mist.delete_ppsk(psk["id"], self.dry_run)
+                            print("\033[92m\u2714\033[0m")
+                            report["psk_deleted"] = True
+                        except:
+                            print('\033[31m\u2716\033[0m')
+                        finally:
+                            self.report_delete.append(report)
             except:
-                if not psk["name"] in self.mist.excluded_psks:
-                    print(
-                            f"User {psk['name'].lower()} not found... Removing the psk "
-                            .ljust(79, "."), end="", flush=True
-                        )
-                    report = {"psk": psk["name"], "psk_deleted": False}
-                    try:
-                        self.mist.delete_ppsk(psk["id"], self.dry_run)
-                        print("\033[92m\u2714\033[0m")
-                        report["psk_deleted"] = True
-                    except:
-                        print('\033[31m\u2716\033[0m')
-                    finally:
-                        self.report_delete.append(report)
+                LOGGER.error("Exception occurred", exc_info=True)
         if not self.report_delete:
             print("No PSK to delete!")
 
