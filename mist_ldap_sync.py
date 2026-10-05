@@ -433,7 +433,7 @@ class Main():
 
     def _send_user_email(self):
         psk_list = self.mist.get_ppks()
-        if not self.report_add:
+        if self.resend_emails:
             LOGGER.debug(f"_send_user_email:generating user list")
             print()
             print(f" PSKs TO EMAIL ".center(80, "-"))
