@@ -138,3 +138,28 @@ class MistSmtp():
             print("Dry Run... Email Report disabled...")
         else:
             print("Report disabled")
+
+    def send_alert(self, reason, dry_run:bool=False):
+        """
+        Warn the report receivers that the sync has been aborted
+        """
+        if self.report_enabled and not dry_run:
+            LOGGER.info("send_alert:generating email alert")
+            msg = MIMEText(
+                    "The LDAP / Mist PSK synchronisation has been aborted.\n"
+                    "No PSK has been created or deleted.\n\n"
+                    f"Reason: {reason}\n"
+                )
+            msg["Subject"] = "Automated PSK Report - SYNC ABORTED"
+            msg["From"] = f"{self.from_name} <{self.from_email}>"
+            for receiver in self.report_receivers:
+                del msg["To"]
+                msg["To"] = receiver
+                self._send_email(
+                        receiver, msg.as_string(),
+                        f"Sending alert email to {receiver}"
+                    )
+        elif dry_run:
+            print("Dry Run... Email Alert disabled...")
+        else:
+            print("Report disabled")
