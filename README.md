@@ -93,6 +93,9 @@ You can use the `-c` option to check your configuration.
 |SMTP_ENABLE_QRCODE | boolean | True | To include configuration QRCode in the email |
 |SMTP_REPORT_ENABLED | boolean | False | To send a report by email about the newly created / deleted PSKs |
 |SMTP_REPORT_RECEIVERS | array | | Required if SMTP_REPORT_ENABLED. Email addresses that will receive the report |
+|SYNC_ALLOW_EMPTY_LDAP | boolean | False | By default the sync is aborted if the LDAP search returns no user (otherwise all the PSKs would be deleted). Set to True to allow it |
+|SYNC_MAX_DELETE | integer or percentage | 0 | Abort the sync if more PSKs than this limit would be deleted in a single run. Number of PSKs (e.g. `25`) or percentage of the existing PSKs (e.g. `10%`), 0 for Unlimited |
+|SYNC_MAX_CREATE | integer or percentage | 0 | Abort the sync if more PSKs than this limit would be created in a single run. Number of PSKs (e.g. `25`) or percentage of the LDAP users (e.g. `10%`), 0 for Unlimited |
 
 
 

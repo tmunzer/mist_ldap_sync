@@ -308,16 +308,64 @@ def _load_ldap(verbose):
 
     return ldap_config
 
+#############################################
+#### SYNC CONFIG
+
+def _load_sync_limit(name):
+    """
+    Read a limit from the env file.
+    Accepted values: 0 or empty (no limit), a number of PSKs (e.g. 25) or a
+    percentage (e.g. 10%)
+    """
+    value = os.environ.get(name, default="").strip()
+    try:
+        if value.endswith("%"):
+            limit = {"value": float(value[:-1]), "percent": True}
+        else:
+            limit = {"value": int(value or 0), "percent": False}
+        if limit["value"] < 0:
+            raise ValueError
+        return limit
+    except ValueError:
+        print('\033[31m✖\033[0m')
+        print(f"ERROR: Wrong {name} value. Must be a positive integer or a percentage (e.g. 10%)")
+        LOGGER.critical(f"Wrong {name} value. Must be a positive integer or a percentage (e.g. 10%)")
+        sys.exit(1)
+
+def _load_sync(verbose):
+    print("Loading SYNC settings ".ljust(79, "."), end="", flush=True)
+    sync_config = {
+        "allow_empty_ldap": eval(os.environ.get("SYNC_ALLOW_EMPTY_LDAP", default="False")),
+        "max_delete": _load_sync_limit("SYNC_MAX_DELETE"),
+        "max_create": _load_sync_limit("SYNC_MAX_CREATE"),
+    }
+    print("\033[92m✔\033[0m")
+
+    if verbose:
+        print("".ljust(80, "-"))
+        print(" SYNC CONFIG ".center(80))
+        print("")
+        print(f"allow_empty_ldap : {sync_config['allow_empty_ldap']}")
+        print(f"max_delete       : {os.environ.get('SYNC_MAX_DELETE', default='')}")
+        print(f"max_create       : {os.environ.get('SYNC_MAX_CREATE', default='')}")
+        print("")
+    LOGGER.info(f"allow_empty_ldap   : {sync_config['allow_empty_ldap']}")
+    LOGGER.info(f"max_delete         : {sync_config['max_delete']}")
+    LOGGER.info(f"max_create         : {sync_config['max_create']}")
+
+    return sync_config
+
 ###############################################################################
 ###############################################################################
 ##################################################################### FUNCTIONS
 ###############################################################################
 class Main():
-    def __init__(self, ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter):
+    def __init__(self, ldap_config, mist_config, smtp_config, sync_config, dry_run, resend_emails, resend_emails_filter):
         self._print_part("INIT", False)
         self.ldap = MistLdap(ldap_config)
         self.mist = Mist(mist_config)
         self.smtp = MistSmtp(smtp_config)
+        self.sync_config = sync_config
         self.report_delete = []
         self.report_add = []
         self.ldap_user_list = []
@@ -339,6 +387,9 @@ class Main():
         self._print_part("MIST REQUEST")
         self.mist_user_list = self.mist.get_users()
         if not self.resend_emails:
+            self._print_part("SAFETY CHECKS")
+            LOGGER.info("sync:safety checks")
+            self._check_sync()
             self._print_part(f" {dry_run_string}DELETE " )
             LOGGER.info("sync:delete users")
             self._delete_psk()
@@ -381,6 +432,62 @@ class Main():
                     data.append(f"email: {user['email'].lower()}")
                 users.append(reported_user)
         return users
+
+    def _psks_to_delete(self):
+        ldap_names = [user["name"].lower() for user in self.ldap_user_list]
+        return [
+            psk for psk in self.mist_user_list
+            if psk["name"].lower() not in ldap_names
+            and not psk["name"] in self.mist.excluded_psks
+        ]
+
+    def _abort(self, reason):
+        print('\033[31m✖\033[0m')
+        print(f"ERROR: {reason}")
+        print("Sync aborted. No PSK has been created or deleted")
+        LOGGER.critical(f"sync aborted:{reason}")
+        self.smtp.send_alert(reason, self.dry_run)
+        sys.exit(3)
+
+    def _check_limit(self, name, limit, count, total, action):
+        if limit["percent"]:
+            max_count = int(total * limit["value"] / 100)
+        elif limit["value"]:
+            max_count = limit["value"]
+        else:
+            return
+        if count > max_count:
+            self._abort(
+                f"{count} PSKs would be {action}, but {name} only allows "
+                f"{max_count} per run. Check the LDAP settings, or raise {name} "
+                "if this change is expected"
+            )
+
+    def _check_sync(self):
+        """
+        Stop the sync, before any PSK is created or deleted, if the LDAP search
+        returned no user or if the changes exceed the configured limits
+        """
+        print("Checking the changes to apply ".ljust(79, "."), end="", flush=True)
+        if not self.ldap_user_list and not self.sync_config["allow_empty_ldap"]:
+            self._abort(
+                "The LDAP search returned no user, which would delete all the PSKs. "
+                "Check the LDAP settings, or set SYNC_ALLOW_EMPTY_LDAP=True "
+                "if this is expected"
+            )
+        to_delete = len(self._psks_to_delete())
+        to_create = len(self._generate_user_list())
+        LOGGER.info(f"_check_sync:{to_delete} psks to delete, {to_create} psks to create")
+        self._check_limit(
+            "SYNC_MAX_DELETE", self.sync_config["max_delete"],
+            to_delete, len(self.mist_user_list), "deleted"
+        )
+        self._check_limit(
+            "SYNC_MAX_CREATE", self.sync_config["max_create"],
+            to_create, len(self.ldap_user_list), "created"
+        )
+        print("\033[92m✔\033[0m")
+        print(f"{to_delete} psks to delete, {to_create} psks to create")
 
     def _delete_psk(self):
         self.report_delete = []
@@ -433,7 +540,7 @@ class Main():
 
     def _send_user_email(self):
         psk_list = self.mist.get_ppks()
-        if not self.report_add:
+        if self.resend_emails:
             LOGGER.debug(f"_send_user_email:generating user list")
             print()
             print(f" PSKs TO EMAIL ".center(80, "-"))
@@ -468,12 +575,14 @@ def _check_only(template:str):
         _load_ldap(True)
         _load_mist(True)
         _load_smtp(True, template)
+        _load_sync(True)
 
 def _run(check, dry_run, resend_emails, resend_emails_filter, template):
         ldap_config = _load_ldap(check)
         mist_config= _load_mist(check)
         smtp_config =_load_smtp(check, template)
-        main = Main(ldap_config, mist_config, smtp_config, dry_run, resend_emails, resend_emails_filter)
+        sync_config = _load_sync(check)
+        main = Main(ldap_config, mist_config, smtp_config, sync_config, dry_run, resend_emails, resend_emails_filter)
         main.sync()
 
 def _read_csv_file(file_path: str):
